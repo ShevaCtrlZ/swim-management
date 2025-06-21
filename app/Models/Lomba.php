@@ -24,14 +24,13 @@ class Lomba extends Model
 
 
     public function nomorLomba()
-{
-    return $this->hasMany(DetailLomba::class, 'lomba_id');
-}
+    {
+        return $this->hasMany(DetailLomba::class, 'lomba_id')->with('peserta')->orderBy('seri')->orderBy('no_lintasan');
+    }
 
     public function peserta()
-{
-    return $this->belongsToMany(Peserta::class, 'detail_lomba', 'lomba_id', 'peserta_id')
-                ->withPivot('no_lintasan', 'urutan', 'catatan_waktu');
-}
-
+    {
+        return $this->belongsToMany(Peserta::class, 'detail_lomba', 'lomba_id', 'peserta_id')
+            ->withPivot('no_lintasan', 'urutan', 'catatan_waktu');
+    }
 }

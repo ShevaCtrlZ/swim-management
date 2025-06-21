@@ -77,18 +77,20 @@ class KompetisiController extends Controller
     {
         $kompetisi = DB::table('kompetisi')->where('id', $id)->first();
 
+        // Ambil semua lomba
         $lomba = DB::table('lomba')
             ->where('kompetisi_id', $id)
             ->get()
             ->map(function ($item) {
-                // Ambil peserta untuk lomba ini
+                // Ambil peserta berdasarkan seri
                 $peserta = DB::table('detail_lomba')
                     ->where('detail_lomba.lomba_id', $item->id)
                     ->join('peserta', 'detail_lomba.peserta_id', '=', 'peserta.id')
                     ->select(
-                        'detail_lomba.id', // Include the ID of detail_lomba
+                        'detail_lomba.id',
                         'detail_lomba.no_lintasan',
                         'detail_lomba.urutan',
+                        'detail_lomba.seri',
                         'detail_lomba.catatan_waktu',
                         'peserta.nama_peserta',
                         'peserta.tgl_lahir',
@@ -96,17 +98,18 @@ class KompetisiController extends Controller
                         'peserta.asal_klub',
                         'peserta.limit',
                     )
+                    ->orderBy('detail_lomba.seri')
                     ->orderBy('detail_lomba.no_lintasan')
-                    ->get();
+                    ->get()
+                    ->groupBy('seri'); // ← ini kuncinya: pisahkan berdasarkan seri
 
-                $jumlahLintasan = $item->jumlah_lintasan ?? 4; // Default 8 lintasan
-                $item->nomorLomba = $peserta->chunk($jumlahLintasan);
-
+                $item->nomorLomba = $peserta; // → sekarang sudah per-seri
                 return $item;
             });
 
         return view('lihat_kompetisi', compact('kompetisi', 'lomba'));
     }
+
 
     public function lihat($id)
     {

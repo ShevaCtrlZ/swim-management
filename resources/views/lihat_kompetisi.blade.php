@@ -65,15 +65,16 @@
                     </div>
 
                     @if ($item->nomorLomba->isNotEmpty())
-                        @foreach ($item->nomorLomba as $index => $kelompok)
+                        @foreach ($item->nomorLomba as $seri => $kelompok)
                             <div>
                                 <h5 class="text-sm md:text-md font-semibold text-gray-700 mt-2">
-                                    Nomor Lomba {{ $item->nomor_lomba }} - Seri {{ $index + 1 }}
+                                    Nomor Lomba {{ $item->nomor_lomba }} - Seri {{ $seri}}
                                 </h5>
                                 <!-- Tombol untuk menaruh peserta limit tertinggi di tengah -->
                                 <form
-                                    action="{{ route('center_max_limit_peserta', ['lomba_id' => $item->id, 'seri' => $index + 1]) }}"
-                                    method="POST" class="mb-2">
+                                    action="{{ route('center_max_limit_peserta', ['lomba_id' => $item->id, 'seri' => $seri]) }}"
+                                    method="POST">
+
                                     @csrf
                                     <button type="submit"
                                         class="inline-flex items-center px-3 py-1 text-xs font-medium text-white bg-pink-600 rounded hover:bg-pink-700">
