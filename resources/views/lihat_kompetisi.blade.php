@@ -29,11 +29,11 @@
                 class="inline-flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-md">
                 <i class="fas fa-plus mr-2"></i> Tambah Lomba
             </a>
-            <form action="{{ route('randomize_all_peserta', $kompetisi->id) }}" method="POST">
+            <form action="{{ route('sort_all_peserta', $kompetisi->id) }}" method="POST">
                 @csrf
                 <button type="submit"
                     class="inline-flex items-center justify-center px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg shadow-md">
-                    <i class="fas fa-random mr-2"></i> Randomize All Peserta
+                    <i class="fas fa-sort-amount-up-alt mr-2"></i> Urutkan Peserta Berdasarkan Limit Waktu
                 </button>
             </form>
         </div>
@@ -51,8 +51,9 @@
                             class="inline-flex items-center px-3 py-1 text-xs font-medium text-white bg-yellow-500 rounded hover:bg-yellow-600">
                             <i class="fas fa-edit mr-1"></i>Edit
                         </a>
-                    
-                        <form action="{{ route('hapus_lomba', $item->id) }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus lomba ini?');">
+
+                        <form action="{{ route('hapus_lomba', $item->id) }}" method="POST"
+                            onsubmit="return confirm('Yakin ingin menghapus lomba ini?');">
                             @csrf
                             @method('DELETE')
                             <button type="submit"
@@ -69,6 +70,16 @@
                                 <h5 class="text-sm md:text-md font-semibold text-gray-700 mt-2">
                                     Nomor Lomba {{ $item->nomor_lomba }} - Seri {{ $index + 1 }}
                                 </h5>
+                                <!-- Tombol untuk menaruh peserta limit tertinggi di tengah -->
+                                <form
+                                    action="{{ route('center_max_limit_peserta', ['lomba_id' => $item->id, 'seri' => $index + 1]) }}"
+                                    method="POST" class="mb-2">
+                                    @csrf
+                                    <button type="submit"
+                                        class="inline-flex items-center px-3 py-1 text-xs font-medium text-white bg-pink-600 rounded hover:bg-pink-700">
+                                        <i class="fas fa-arrows-alt-h mr-1"></i> Limit Tertinggi ke Tengah
+                                    </button>
+                                </form>
                                 <!-- Scrollable Table Wrapper -->
                                 <div class="overflow-x-auto rounded-md shadow-sm mt-2">
                                     <table class="min-w-full border-collapse border border-gray-300 text-sm">
@@ -85,18 +96,24 @@
                                         <tbody>
                                             @foreach ($kelompok as $peserta)
                                                 <tr class="hover:bg-gray-50">
-                                                    <td class="border border-gray-300 px-4 py-2">{{ $loop->iteration }}</td>
-                                                    <td class="border border-gray-300 px-4 py-2">{{ $peserta->nama_peserta }}</td>
-                                                    <td class="border border-gray-300 px-4 py-2">{{ $peserta->tgl_lahir }}</td>
-                                                    <td class="border border-gray-300 px-4 py-2">{{ $peserta->asal_klub }}</td>
+                                                    <td class="border border-gray-300 px-4 py-2">{{ $loop->iteration }}
+                                                    </td>
+                                                    <td class="border border-gray-300 px-4 py-2">
+                                                        {{ $peserta->nama_peserta }}</td>
+                                                    <td class="border border-gray-300 px-4 py-2">{{ $peserta->tgl_lahir }}
+                                                    </td>
+                                                    <td class="border border-gray-300 px-4 py-2">{{ $peserta->asal_klub }}
+                                                    </td>
                                                     <td class="border border-gray-300 px-4 py-2">{{ $peserta->limit }}</td>
                                                     <td class="border border-gray-300 px-4 py-2">
-                                                        <form action="{{ route('update_hasil', $peserta->id) }}" method="POST">
+                                                        <form action="{{ route('update_hasil', $peserta->id) }}"
+                                                            method="POST">
                                                             @csrf
-                                                            <input type="text" name="hasil" value="{{ $peserta->catatan_waktu ?? '' }}" 
-                                                                placeholder="00:00:00" 
+                                                            <input type="text" name="hasil"
+                                                                value="{{ $peserta->catatan_waktu ?? '' }}"
+                                                                placeholder="00:00:00"
                                                                 class="border border-gray-300 rounded px-2 py-1 text-sm">
-                                                            <button type="submit" 
+                                                            <button type="submit"
                                                                 class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs ml-2">
                                                                 Simpan
                                                             </button>

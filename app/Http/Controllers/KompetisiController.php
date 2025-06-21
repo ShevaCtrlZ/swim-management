@@ -305,4 +305,111 @@ class KompetisiController extends Controller
 
         return redirect()->route('list_kompetisi')->with('success', 'Data successfully deleted.');
     }
+
+    public function sortAllPeserta($id)
+    {
+        $lomba = DB::table('lomba')
+            ->where('kompetisi_id', $id)
+            ->get();
+
+        foreach ($lomba as $item) {
+            if ($item->jumlah_lintasan <= 0) {
+                continue; // Skip if jumlah_lintasan is invalid
+            }
+
+            // Ambil peserta dan urutkan dari limit terbesar ke terkecil
+            $peserta = DB::table('detail_lomba')
+                ->where('detail_lomba.lomba_id', $item->id)
+                ->join('peserta', 'detail_lomba.peserta_id', '=', 'peserta.id')
+                ->select('detail_lomba.id', 'peserta.id as peserta_id', 'peserta.nama_peserta', 'peserta.limit')
+                ->orderByRaw("CASE WHEN peserta.limit IS NULL OR peserta.limit = '' THEN 1 ELSE 0 END, peserta.limit DESC")
+                ->get();
+
+            // Bagi peserta ke dalam seri sesuai jumlah lintasan
+            $seriPeserta = $peserta->chunk($item->jumlah_lintasan);
+
+            foreach ($seriPeserta as $seriIndex => $heat) {
+                foreach ($heat as $laneIndex => $peserta) {
+                    DB::table('detail_lomba')
+                        ->where('id', $peserta->id)
+                        ->update([
+                            'no_lintasan' => $laneIndex + 1,
+                            'urutan' => $seriIndex + 1,
+                            'seri' => $seriIndex + 1 // pastikan seri diisi!
+                        ]);
+                }
+            }
+        }
+
+        return redirect()->route('lihat_kompetisi', ['id' => $id])
+            ->with('success', 'Semua peserta berhasil diurutkan berdasarkan limit waktu (terbesar ke terkecil) dan seri sudah diatur.');
+    }
+
+    public function centerMaxLimitPeserta(Request $request, $lomba_id, $seri)
+    {
+        // Validasi parameter seri
+        if (is_null($seri) || $seri === '' || !is_numeric($seri)) {
+            return back()->with('error', 'Parameter seri tidak valid.');
+        }
+
+        // Gunakan $seri langsung dari parameter (tanpa dikurangi 1)
+        $seri = (int)$seri;
+
+        // Ambil jumlah lintasan dari lomba
+        $lomba = DB::table('lomba')->where('id', $lomba_id)->first();
+        if (!$lomba) {
+            return back()->with('error', 'Lomba tidak ditemukan.');
+        }
+
+        // Ambil peserta hanya dari seri yang diminta
+        $kelompok = DB::table('detail_lomba')
+            ->where('detail_lomba.lomba_id', $lomba_id)
+            ->where('detail_lomba.seri', $seri)
+            ->join('peserta', 'detail_lomba.peserta_id', '=', 'peserta.id')
+            ->select('detail_lomba.id', 'detail_lomba.peserta_id', 'peserta.limit')
+            ->orderBy('detail_lomba.urutan')
+            ->get();
+
+        if ($kelompok->isEmpty()) {
+            return back()->with('error', 'Seri tidak ditemukan atau tidak ada peserta.');
+        }
+
+        // Urutkan peserta berdasarkan limit (terendah ke tertinggi, null terakhir)
+        $sorted = $kelompok->sortBy(function ($p) {
+            return is_null($p->limit) || $p->limit === '' ? INF : $p->limit;
+        })->values();
+
+        // Center-Out Sorting
+        $final = [];
+        $count = $sorted->count();
+        $center = intval(floor(($count - 1) / 2));
+        $left = $center;
+        $right = $center + 1;
+        $toggle = true;
+
+        foreach ($sorted as $peserta) {
+            if ($toggle) {
+                $final[$left--] = $peserta;
+            } else {
+                $final[$right++] = $peserta;
+            }
+            $toggle = !$toggle;
+        }
+
+        ksort($final);
+        $final = array_values($final);
+
+        // Update hanya peserta di seri dan lomba ini
+        foreach ($final as $i => $peserta) {
+            DB::table('detail_lomba')
+                ->where('id', $peserta->id)
+                ->where('detail_lomba.lomba_id', $lomba_id) // tambahkan filter lomba_id
+                ->where('seri', $seri) // filter seri
+                ->update([
+                    'no_lintasan' => $i + 1
+                ]);
+        }
+
+        return back()->with('success', 'Peserta pada seri ini sudah diurutkan dengan Center-Out Sorting.');
+    }
 }

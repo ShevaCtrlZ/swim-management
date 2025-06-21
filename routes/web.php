@@ -92,7 +92,7 @@ Route::post('/stop-series', [LombaController::class, 'stopSeries']);
 Route::post('/update-hasil/{id}', [LombaController::class, 'updateHasil'])->name('update_hasil');
 
 Route::post('/get-times', [TimerController::class, 'getTimes'])->name('timer.get.times');
-    
+
 
 Route::put('/kompetisi/{id}/update', [KompetisiController::class, 'edit'])
     ->middleware(['auth', 'verified'])
@@ -167,5 +167,9 @@ Route::get('/export/hasil-kompetisi/{id}', [ExportPdfController::class, 'hasilKo
 Route::get('/hasil/export/excel/{id}', [ExportController::class, 'exportExcel'])->name('hasil.export.excel');
 
 Route::post('/kompetisi/{id}/randomize-all', [KompetisiController::class, 'randomizeAllPeserta'])->name('randomize_all_peserta');
+Route::post('/kompetisi/{id}/sort-all-peserta', [KompetisiController::class, 'sortAllPeserta'])
+    ->name('sort_all_peserta');
+Route::post('/lomba/{lomba_id}/seri/{seri}/center-max-limit', [KompetisiController::class, 'centerMaxLimitPeserta'])
+    ->name('center_max_limit_peserta');
 
 require __DIR__ . '/auth.php';
