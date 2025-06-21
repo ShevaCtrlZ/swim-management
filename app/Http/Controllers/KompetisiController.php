@@ -8,6 +8,7 @@ use Illuminate\View\View;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Auth;
 
 class KompetisiController extends Controller
 {
@@ -414,5 +415,16 @@ class KompetisiController extends Controller
         }
 
         return back()->with('success', 'Peserta pada seri ini sudah diurutkan dengan Center-Out Sorting.');
+    }
+
+    public function klub()
+    {
+        $klub = Auth::user()->klub;
+        $anggota = $klub ? $klub->peserta : collect();
+        $kompetisiList = \App\Models\Kompetisi::with(['lomba.peserta' => function($q) use ($klub) {
+            $q->where('klub_id', $klub->id);
+        }])->get();
+
+        return view('klub.kompetisi', compact('klub', 'anggota', 'kompetisiList'));
     }
 }

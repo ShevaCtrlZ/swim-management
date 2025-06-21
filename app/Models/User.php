@@ -48,8 +48,7 @@ class User extends Authenticatable
     }
 
     // Relasi ke tabel klub
-    public function klub()
-    {
-        return $this->belongsTo(Klub::class);
+    public function klub() {
+        return $this->belongsTo(\App\Models\Klub::class, 'klub_id');
     }
 }

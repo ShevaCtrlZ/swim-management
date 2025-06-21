@@ -133,6 +133,7 @@ Route::middleware(['auth', 'role:klub'])->group(function () {
     Route::get('/add', [AddController::class, 'create'])->name('add');
     Route::post('/store-data', [AddController::class, 'storeData']);
     Route::get('/info-klub', [KlubController::class, 'info'])->name('info.klub');
+    Route::get('/kompetisi/klub', [KompetisiController::class, 'klub'])->name('kompetisi.klub');
 });
 
 Route::middleware('api')->group(function () {

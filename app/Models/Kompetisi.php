@@ -16,6 +16,9 @@ class Kompetisi extends Model
         return $this->hasMany(Lomba::class, 'kompetisi_id');
     }
     
+    public function peserta() {
+        return $this->hasMany(\App\Models\Peserta::class, 'kompetisi_id');
+    }
 }
 
 
