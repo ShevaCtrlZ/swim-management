@@ -58,9 +58,11 @@
                                     @foreach ($k->lomba as $l)
                                         <option value="{{ $l->id }}" data-kompetisi="{{ $k->id }}"
                                             data-min="{{ $l->tahun_lahir_minimal }}"
-                                            data-max="{{ $l->tahun_lahir_maksimal }}">
+                                            data-max="{{ $l->tahun_lahir_maksimal }}" data-jk="{{ $l->jk }}">
                                             {{ $l->jenis_gaya }} - {{ $l->jarak }}m
                                             ({{ $l->tahun_lahir_minimal }}/{{ $l->tahun_lahir_maksimal }})
+                                            -
+                                            {{ $l->jk }}
                                         </option>
                                     @endforeach
                                     <script>
@@ -68,12 +70,20 @@
                                             const kompetisiSelect = document.getElementById('kompetisi');
                                             const lombaSelect = document.getElementById('lomba_id');
                                             const tglLahirInput = document.getElementById('tgl_lahir');
+                                            const jenisKelaminSelect = document.getElementById('jenis_kelamin');
 
                                             const allLombaOptions = Array.from(lombaSelect.querySelectorAll('option[data-kompetisi]'));
 
                                             function filterLomba() {
                                                 const selectedKompetisi = kompetisiSelect.value;
+                                                const jenisKelamin = jenisKelaminSelect.value;
                                                 const tglLahir = new Date(tglLahirInput.value);
+
+                                                if (!selectedKompetisi || !jenisKelamin || !tglLahirInput.value) {
+                                                    lombaSelect.innerHTML = '<option value="">Pilih Lomba</option>';
+                                                    return;
+                                                }
+
                                                 const tahunLahir = tglLahir.getFullYear();
 
                                                 lombaSelect.innerHTML = '<option value="">Pilih Lomba</option>';
@@ -82,9 +92,13 @@
                                                     const kompetisiId = opt.getAttribute('data-kompetisi');
                                                     const min = parseInt(opt.getAttribute('data-min'));
                                                     const max = parseInt(opt.getAttribute('data-max'));
+                                                    const jk = opt.getAttribute('data-jk');
+
+                                                    const cocokJK = (jk === 'All') || (jk === jenisKelamin);
 
                                                     return kompetisiId === selectedKompetisi &&
-                                                        tahunLahir >= min && tahunLahir <= max;
+                                                        tahunLahir >= min && tahunLahir <= max &&
+                                                        cocokJK;
                                                 });
 
                                                 filtered.forEach(opt => lombaSelect.appendChild(opt.cloneNode(true)));
@@ -92,6 +106,7 @@
 
                                             kompetisiSelect.addEventListener('change', filterLomba);
                                             tglLahirInput.addEventListener('change', filterLomba);
+                                            jenisKelaminSelect.addEventListener('change', filterLomba);
                                         });
                                     </script>
                                 @endforeach
