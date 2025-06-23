@@ -30,6 +30,16 @@
                             </select>
                         </div>
                         <div class="mb-4">
+                            <label for="kompetisi" class="block text-sm font-medium text-gray-700">Kompetisi</label>
+                            <select id="kompetisi"
+                                class="mt-1 p-3 block w-full shadow-md sm:text-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-lg">
+                                <option value="">Pilih Kompetisi</option>
+                                @foreach ($kompetisi as $k)
+                                    <option value="{{ $k->id }}">{{ $k->nama_kompetisi }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="mb-4">
                             <label for="tgl_lahir" class="block text-sm font-medium text-gray-700">Tanggal Lahir</label>
                             <input type="date" name="tgl_lahir" id="tgl_lahir"
                                 class="mt-1 p-3 block w-full shadow-md sm:text-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-lg">
@@ -40,24 +50,50 @@
                                 class="mt-1 p-3 block w-full shadow-md sm:text-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-lg">
                         </div>
                         <div class="mb-4">
-                            <label for="kompetisi" class="block text-sm font-medium text-gray-700">Kompetisi</label>
-                            <select id="kompetisi" class="mt-1 p-3 block w-full shadow-md sm:text-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-lg">
-                                <option value="">Pilih Kompetisi</option>
-                                @foreach ($kompetisi as $k)
-                                    <option value="{{ $k->id }}">{{ $k->nama_kompetisi }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="mb-4">
                             <label for="lomba_id" class="block text-sm font-medium text-gray-700">Lomba</label>
-                            <select name="lomba_id" id="lomba_id" class="mt-1 p-3 block w-full shadow-md sm:text-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-lg">
+                            <select name="lomba_id" id="lomba_id"
+                                class="mt-1 p-3 block w-full shadow-md sm:text-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-lg">
                                 <option value="">Pilih Lomba</option>
                                 @foreach ($kompetisi as $k)
                                     @foreach ($k->lomba as $l)
-                                        <option value="{{ $l->id }}" data-kompetisi="{{ $k->id }}">
+                                        <option value="{{ $l->id }}" data-kompetisi="{{ $k->id }}"
+                                            data-min="{{ $l->tahun_lahir_minimal }}"
+                                            data-max="{{ $l->tahun_lahir_maksimal }}">
                                             {{ $l->jenis_gaya }} - {{ $l->jarak }}m
+                                            ({{ $l->tahun_lahir_minimal }}/{{ $l->tahun_lahir_maksimal }})
                                         </option>
                                     @endforeach
+                                    <script>
+                                        document.addEventListener('DOMContentLoaded', function() {
+                                            const kompetisiSelect = document.getElementById('kompetisi');
+                                            const lombaSelect = document.getElementById('lomba_id');
+                                            const tglLahirInput = document.getElementById('tgl_lahir');
+
+                                            const allLombaOptions = Array.from(lombaSelect.querySelectorAll('option[data-kompetisi]'));
+
+                                            function filterLomba() {
+                                                const selectedKompetisi = kompetisiSelect.value;
+                                                const tglLahir = new Date(tglLahirInput.value);
+                                                const tahunLahir = tglLahir.getFullYear();
+
+                                                lombaSelect.innerHTML = '<option value="">Pilih Lomba</option>';
+
+                                                const filtered = allLombaOptions.filter(opt => {
+                                                    const kompetisiId = opt.getAttribute('data-kompetisi');
+                                                    const min = parseInt(opt.getAttribute('data-min'));
+                                                    const max = parseInt(opt.getAttribute('data-max'));
+
+                                                    return kompetisiId === selectedKompetisi &&
+                                                        tahunLahir >= min && tahunLahir <= max;
+                                                });
+
+                                                filtered.forEach(opt => lombaSelect.appendChild(opt.cloneNode(true)));
+                                            }
+
+                                            kompetisiSelect.addEventListener('change', filterLomba);
+                                            tglLahirInput.addEventListener('change', filterLomba);
+                                        });
+                                    </script>
                                 @endforeach
                             </select>
                         </div>
@@ -74,21 +110,21 @@
 
         <!-- Script untuk Filter Lomba -->
         <script>
-            document.addEventListener('DOMContentLoaded', function () {
+            document.addEventListener('DOMContentLoaded', function() {
                 const kompetisiSelect = document.getElementById('kompetisi');
                 const lombaSelect = document.getElementById('lomba_id');
 
                 // Ambil semua opsi lomba yang punya atribut data-kompetisi
                 const allLombaOptions = Array.from(lombaSelect.querySelectorAll('option[data-kompetisi]'));
 
-                kompetisiSelect.addEventListener('change', function () {
+                kompetisiSelect.addEventListener('change', function() {
                     const selectedKompetisi = this.value;
 
                     // Kosongkan dropdown lomba
                     lombaSelect.innerHTML = '<option value="">Pilih Lomba</option>';
 
                     // Filter dan tambahkan opsi yang sesuai kompetisi yang dipilih
-                    const filteredOptions = allLombaOptions.filter(opt => 
+                    const filteredOptions = allLombaOptions.filter(opt =>
                         opt.getAttribute('data-kompetisi') === selectedKompetisi
                     );
 
@@ -103,7 +139,8 @@
             <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
                 <div class="bg-white overflow-hidden shadow-lg sm:rounded-lg">
                     <div class="p-6 text-center">
-                        <h3 class="text-xl font-bold text-red-600">{{ __('Anda tidak memiliki akses ke halaman ini.') }}</h3>
+                        <h3 class="text-xl font-bold text-red-600">{{ __('Anda tidak memiliki akses ke halaman ini.') }}
+                        </h3>
                     </div>
                 </div>
             </div>
