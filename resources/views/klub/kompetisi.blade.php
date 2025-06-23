@@ -15,7 +15,8 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     @foreach ($kompetisiList as $kompetisi)
                         <div class="bg-white rounded-lg shadow-md p-6 mb-4 relative">
-                            <h3 class="text-xl font-bold text-gray-800 mb-1">{{ $kompetisi->nama_kompetisi ?? $kompetisi->lokasi }}</h3>
+                            <h3 class="text-xl font-bold text-gray-800 mb-1">
+                                {{ $kompetisi->nama_kompetisi ?? $kompetisi->lokasi }}</h3>
                             <p class="text-sm text-gray-600 mb-1">
                                 <span class="font-semibold">Tanggal:</span>
                                 {{ $kompetisi->tgl_mulai ?? '-' }}{{ $kompetisi->tgl_selesai ? ' - ' . $kompetisi->tgl_selesai : '' }}
@@ -23,7 +24,7 @@
                             <p class="text-sm text-gray-600 mb-2">
                                 <span class="font-semibold">Lokasi:</span> {{ $kompetisi->lokasi }}
                             </p>
-                            @if(!empty($kompetisi->deskripsi))
+                            @if (!empty($kompetisi->deskripsi))
                                 <p class="text-sm text-gray-500 mb-2">{{ $kompetisi->deskripsi }}</p>
                             @endif
 
@@ -39,16 +40,33 @@
                                 <h4 class="font-semibold mb-2">Peserta dari Klub Ini:</h4>
                                 @php
                                     $pesertaKlub = collect();
-                                    foreach($kompetisi->lomba as $lomba) {
+                                    foreach ($kompetisi->lomba as $lomba) {
                                         $pesertaKlub = $pesertaKlub->merge($lomba->peserta);
                                     }
                                 @endphp
-                                @if($pesertaKlub->count())
+                                @if ($pesertaKlub->count())
                                     <ul class="list-disc pl-5">
-                                        @foreach($pesertaKlub as $peserta)
-                                            <li>
-                                                <span class="font-medium">{{ $peserta->nama_peserta }}</span>
-                                                <span class="text-xs text-gray-500">({{ $peserta->jenis_kelamin === 'L' ? 'Laki-laki' : 'Perempuan' }}, {{ $peserta->tgl_lahir }})</span>
+                                        @foreach ($pesertaKlub as $peserta)
+                                            <li class="flex items-center justify-between">
+                                                <div>
+                                                    <span class="font-medium">{{ $peserta->nama_peserta }}</span>
+                                                    <span class="text-xs text-gray-500">
+                                                        ({{ $peserta->jenis_kelamin === 'L' ? 'Laki-laki' : 'Perempuan' }},
+                                                        {{ $peserta->tgl_lahir }})
+                                                    </span>
+                                                </div>
+                                                <div class="flex space-x-2">
+                                                    <a href="{{ route('peserta.edit', $peserta->id) }}"
+                                                        class="text-blue-600 hover:underline text-xs">Edit</a>
+                                                    <form action="{{ route('peserta.destroy', $peserta->id) }}"
+                                                        method="POST"
+                                                        onsubmit="return confirm('Yakin ingin menghapus peserta ini?');">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit"
+                                                            class="text-red-600 hover:underline text-xs">Hapus</button>
+                                                    </form>
+                                                </div>
                                             </li>
                                         @endforeach
                                     </ul>

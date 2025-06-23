@@ -4,29 +4,30 @@
 @section('title', 'Kompetisi')
 
 @section('content')
-<div class="relative">
-    <!-- Gambar Banner -->
-    <img src="{{ asset('gambar/banner.webp') }}" class="w-full h-64 object-cover" alt="Banner">
-    <!-- Overlay -->
-    <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-        <h1 class="text-white text-4xl font-bold">Kompetisi</h1>
+    <div class="relative">
+        <!-- Gambar Banner -->
+        <img src="{{ asset('gambar/banner.webp') }}" class="w-full h-64 object-cover" alt="Banner">
+        <!-- Overlay -->
+        <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+            <h1 class="text-white text-4xl font-bold">Kompetisi</h1>
+        </div>
     </div>
-</div>
 
-<!-- Daftar Kompetisi -->
-<div class="container mx-auto px-4 py-8">
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        @foreach ($data as $item)
-            <!-- Card Kompetisi -->
-            <div class="bg-white border border-gray-200 rounded-lg shadow-md p-4 relative hover:shadow-lg transition-shadow duration-200">
-                
-                <a href="{{ route('user_kompetisi', $item->id) }}" class="block">
-                    <h3 class="text-lg font-bold text-gray-800">{{ $item->nama_kompetisi }}</h3>
-                    <p class="text-sm text-gray-600">Tanggal: {{ $item->tgl_mulai }} - {{ $item->tgl_selesai }}</p>
-                    <p class="text-sm text-gray-600">Lokasi: {{ $item->lokasi }}</p>
-                </a>
-            </div>
-        @endforeach
+    <!-- Daftar Kompetisi -->
+    <div class="container mx-auto px-4 py-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            @foreach ($data as $item)
+                <!-- Card Kompetisi -->
+                <div
+                    class="bg-white border border-gray-200 rounded-lg shadow-md p-4 relative hover:shadow-lg transition-shadow duration-200">
+
+                    <a href="{{ route('user_kompetisi', $item->id) }}" class="block">
+                        <h3 class="text-lg font-bold text-gray-800">{{ $item->nama_kompetisi }}</h3>
+                        <p class="text-sm text-gray-600">Tanggal: {{ $item->tgl_mulai }} - {{ $item->tgl_selesai }}</p>
+                        <p class="text-sm text-gray-600">Lokasi: {{ $item->lokasi }}</p>
+                    </a>
+                </div>
+            @endforeach
+        </div>
     </div>
-</div>
 @endsection
