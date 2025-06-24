@@ -26,6 +26,7 @@ class LombaController extends Controller
             'tahun_lahir_minimal' => 'required|integer|min:1000|max:' . (date('Y') - 1),
             'tahun_lahir_maksimal' => 'required|integer|min:1000|max:' . (date('Y') - 1),
             'jk' => 'required|string|in:Laki-laki,Perempuan', // L untuk laki-laki, P untuk perempuan
+            'harga' => 'required|numeric|min:0',
         ]);
 
         // Hitung nomor lomba otomatis
@@ -41,6 +42,7 @@ class LombaController extends Controller
             'tahun_lahir_minimal' => $request->tahun_lahir_minimal,
             'tahun_lahir_maksimal' => $request->tahun_lahir_maksimal,
             'jk' => $request->jk,
+            'harga' => $request->harga,
         ]);
 
         // Redirect ke halaman detail kompetisi
