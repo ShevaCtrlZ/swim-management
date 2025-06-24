@@ -24,6 +24,13 @@
                             <p class="text-sm text-gray-600 mb-2">
                                 <span class="font-semibold">Lokasi:</span> {{ $kompetisi->lokasi }}
                             </p>
+                            <p class="text-sm font-medium mb-1">
+                                Total Harga Klub:
+                                <span class="font-bold text-green-800">
+                                    Rp{{ number_format($kompetisi->total_harga_klub, 0, ',', '.') }}
+                                </span>
+                            </p>
+
                             @if (!empty($kompetisi->deskripsi))
                                 <p class="text-sm text-gray-500 mb-2">{{ $kompetisi->deskripsi }}</p>
                             @endif

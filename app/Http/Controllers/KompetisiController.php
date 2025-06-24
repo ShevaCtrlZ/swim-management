@@ -420,11 +420,27 @@ class KompetisiController extends Controller
     public function klub()
     {
         $klub = Auth::user()->klub;
-        $anggota = $klub ? $klub->peserta : collect();
-        $kompetisiList = \App\Models\Kompetisi::with(['lomba.peserta' => function($q) use ($klub) {
-            $q->where('klub_id', $klub->id);
-        }])->get();
 
-        return view('klub.kompetisi', compact('klub', 'anggota', 'kompetisiList'));
+        $kompetisiList = \App\Models\Kompetisi::with([
+            'lomba.peserta' => function ($q) use ($klub) {
+                $q->where('klub_id', $klub->id); // hanya peserta dari klub ini
+            }
+        ])->get();
+
+        // Hitung total_harga per kompetisi
+        foreach ($kompetisiList as $kompetisi) {
+            $total = 0;
+
+            foreach ($kompetisi->lomba as $lomba) {
+                // hitung peserta klub di lomba ini × harga lomba
+                $jumlahPeserta = $lomba->peserta->count();
+                $total += $jumlahPeserta * $lomba->harga; // asumsi `harga` ada di model Lomba
+            }
+
+            // simpan sementara sebagai properti di model kompetisi
+            $kompetisi->total_harga_klub = $total;
+        }
+
+        return view('klub.kompetisi', compact('klub', 'kompetisiList'));
     }
 }
