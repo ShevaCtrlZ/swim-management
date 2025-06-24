@@ -25,7 +25,7 @@ class LombaController extends Controller
             'jumlah_lintasan' => 'required|integer|min:1',
             'tahun_lahir_minimal' => 'required|integer|min:1000|max:' . (date('Y') - 1),
             'tahun_lahir_maksimal' => 'required|integer|min:1000|max:' . (date('Y') - 1),
-            'jk' => 'required|string|in:Laki-laki,Perempuan', // L untuk laki-laki, P untuk perempuan
+            'jk' => 'required|string|in:L,P', // L untuk laki-laki, P untuk perempuan
             'harga' => 'required|numeric|min:0',
         ]);
 

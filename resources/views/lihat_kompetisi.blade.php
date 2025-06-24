@@ -68,19 +68,23 @@
                         @foreach ($item->nomorLomba as $seri => $kelompok)
                             <div>
                                 <h5 class="text-sm md:text-md font-semibold text-gray-700 mt-2">
-                                    Nomor Lomba {{ $item->nomor_lomba }} - Seri {{ $seri}}
+                                    Nomor Lomba {{ $item->nomor_lomba }} - Seri {{ $seri }}
                                 </h5>
                                 <!-- Tombol untuk menaruh peserta limit tertinggi di tengah -->
-                                <form
-                                    action="{{ route('center_max_limit_peserta', ['lomba_id' => $item->id, 'seri' => $seri]) }}"
-                                    method="POST">
+                                @if (!empty($seri))
+                                    <form
+                                        action="{{ route('center_max_limit_peserta', ['lomba_id' => $item->id, 'seri' => $seri]) }}"
+                                        method="POST">
+                                        @csrf
+                                        <button type="submit"
+                                            class="inline-flex items-center px-3 py-1 text-xs font-medium text-white bg-pink-600 rounded hover:bg-pink-700">
+                                            <i class="fas fa-arrows-alt-h mr-1"></i> Limit Tertinggi ke Tengah
+                                        </button>
+                                    </form>
+                                @else
+                                    <p class="text-red-500 text-xs">Seri belum diatur, tidak bisa urutkan ke tengah.</p>
+                                @endif
 
-                                    @csrf
-                                    <button type="submit"
-                                        class="inline-flex items-center px-3 py-1 text-xs font-medium text-white bg-pink-600 rounded hover:bg-pink-700">
-                                        <i class="fas fa-arrows-alt-h mr-1"></i> Limit Tertinggi ke Tengah
-                                    </button>
-                                </form>
                                 <!-- Scrollable Table Wrapper -->
                                 <div class="overflow-x-auto rounded-md shadow-sm mt-2">
                                     <table class="min-w-full border-collapse border border-gray-300 text-sm">

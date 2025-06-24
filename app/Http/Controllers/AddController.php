@@ -26,21 +26,24 @@ class AddController extends Controller
             'jenis_kelamin' => 'required|in:L,P',
             'tgl_lahir' => 'required|date',
             'limit' => 'required',
-            'lomba_id' => 'required|exists:lomba,id',
+            'lomba_id' => 'required|array',
+            'lomba_id.*' => 'exists:lomba,id',
         ]);
 
-        // Validasi tambahan: Tahun lahir sesuai dengan aturan lomba
-        $lomba = Lomba::findOrFail($request->lomba_id);
         $tahunLahir = date('Y', strtotime($request->tgl_lahir));
 
-        if ($tahunLahir < $lomba->tahun_lahir_minimal || $tahunLahir > $lomba->tahun_lahir_maksimal) {
-            return back()->with('error', 'Tahun lahir peserta tidak sesuai dengan ketentuan lomba.');
+        // Validasi setiap lomba sesuai tahun lahir
+        foreach ($request->lomba_id as $lombaId) {
+            $lomba = Lomba::findOrFail($lombaId);
+            if ($tahunLahir < $lomba->tahun_lahir_minimal || $tahunLahir > $lomba->tahun_lahir_maksimal) {
+                return back()->with('error', "Tahun lahir peserta tidak sesuai dengan ketentuan lomba: {$lomba->jenis_gaya} - {$lomba->jarak}m");
+            }
         }
 
         // Ambil data user/klub
         $user = Auth::user();
         $asal_klub = $user->klub->nama_klub ?? 'Unknown';
-
+        $firstLombaId = $request->lomba_id[0];
         // Simpan data peserta
         $peserta = peserta::create([
             'nama_peserta' => $request->nama_peserta,
@@ -49,21 +52,30 @@ class AddController extends Controller
             'asal_klub' => $asal_klub,
             'limit' => $request->limit,
             'klub_id' => $user->klub_id,
-            'lomba_id' => $request->lomba_id,
+            'lomba_id' => $firstLombaId, // karena bisa banyak
         ]);
 
-        // Simpan ke detail lomba
-        Detaillomba::create([
-            'lomba_id' => $request->lomba_id,
-            'peserta_id' => $peserta->id,
-            'no_lintasan' => $request->no_lintasan ?? null,
-            'urutan' => null,
-            'catatan_waktu' => null,
-        ]);
+        $totalHarga = 0;
+        foreach ($request->lomba_id as $lombaId) {
+            $lomba = Lomba::findOrFail($lombaId);
+            $totalHarga += $lomba->harga;
+
+            Detaillomba::create([
+                'lomba_id' => $lomba->id,
+                'peserta_id' => $peserta->id,
+                'no_lintasan' => $request->no_lintasan ?? null,
+                'urutan' => null,
+                'catatan_waktu' => null,
+            ]);
+        }
+
+        // Tambahkan total harga ke kolom klub
+        $klub = $user->klub;
+        $klub->increment('total_harga', $totalHarga);
+
 
         return redirect()->route('add')->with('success', 'Peserta berhasil ditambahkan.');
     }
-
 
     public function list()
     {
@@ -73,20 +85,31 @@ class AddController extends Controller
 
     public function atlet()
     {
-        // Ambil semua data peserta dari database
         $data = peserta::all();
-
-        // Kirim data ke view
         return view('atlet', compact('data'));
     }
 
     public function create()
     {
-        // Ambil semua kompetisi beserta lomba yang terkait
         $kompetisi = Kompetisi::with('lomba')->get();
 
-        // Kirim data kompetisi ke view
-        return view('add', compact('kompetisi'));
+        $allLombaData = $kompetisi->flatMap(function ($k) {
+            return $k->lomba->map(function ($l) use ($k) {
+                return [
+                    'id' => $l->id,
+                    'kompetisi_id' => $k->id,
+                    'jenis_gaya' => $l->jenis_gaya,
+                    'jarak' => $l->jarak,
+                    'min' => (int) $l->tahun_lahir_minimal,
+                    'max' => (int) $l->tahun_lahir_maksimal,
+                    'jk' => strtoupper(substr($l->jk, 0, 1)), // convert 'Laki-laki' jadi 'L', 'Perempuan' jadi 'P'
+                    'harga' => $l->harga ?? 0
+                ];
+            });
+        })->values();
+
+
+        return view('add', compact('kompetisi', 'allLombaData'));
     }
 
     public function edit($id)

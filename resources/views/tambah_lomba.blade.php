@@ -70,8 +70,8 @@
                             <label for="jk" class="block text-sm font-medium text-gray-700">Jenis Kelamin</label>
                             <select name="jk" id="jk"
                                 class="mt-1 p-3 block w-full shadow-md sm:text-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-lg">
-                                <option value="Laki-laki">Laki-laki</option>
-                                <option value="Perempuan">Perempuan</option>
+                                <option value="L">Laki-laki</option>
+                                <option value="P">Perempuan</option>
                             </select>
                         </div>
                         <div class="mb-4">

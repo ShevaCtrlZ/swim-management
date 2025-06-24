@@ -22,14 +22,6 @@
                                 class="mt-1 p-3 block w-full shadow-md sm:text-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-lg">
                         </div>
                         <div class="mb-4">
-                            <label for="jenis_kelamin" class="block text-sm font-medium text-gray-700">Jenis Kelamin</label>
-                            <select name="jenis_kelamin" id="jenis_kelamin"
-                                class="mt-1 p-3 block w-full shadow-md sm:text-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-lg">
-                                <option value="L">Laki-laki</option>
-                                <option value="P">Perempuan</option>
-                            </select>
-                        </div>
-                        <div class="mb-4">
                             <label for="kompetisi" class="block text-sm font-medium text-gray-700">Kompetisi</label>
                             <select id="kompetisi"
                                 class="mt-1 p-3 block w-full shadow-md sm:text-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-lg">
@@ -45,73 +37,26 @@
                                 class="mt-1 p-3 block w-full shadow-md sm:text-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-lg">
                         </div>
                         <div class="mb-4">
+                            <label for="jenis_kelamin" class="block text-sm font-medium text-gray-700">Jenis Kelamin</label>
+                            <select name="jenis_kelamin" id="jenis_kelamin"
+                                class="mt-1 p-3 block w-full shadow-md sm:text-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-lg">
+                                <option value="L">Laki-laki</option>
+                                <option value="P">Perempuan</option>
+                            </select>
+                        </div>
+                        <div class="mb-4">
                             <label for="limit" class="block text-sm font-medium text-gray-700">Limit</label>
                             <input type="text" name="limit" id="limit" placeholder="Masukkan limit peserta"
                                 class="mt-1 p-3 block w-full shadow-md sm:text-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-lg">
                         </div>
                         <div class="mb-4">
-                            <label for="lomba_id" class="block text-sm font-medium text-gray-700">Lomba</label>
-                            <select name="lomba_id" id="lomba_id"
-                                class="mt-1 p-3 block w-full shadow-md sm:text-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-lg">
-                                <option value="">Pilih Lomba</option>
-                                @foreach ($kompetisi as $k)
-                                    @foreach ($k->lomba as $l)
-                                        <option value="{{ $l->id }}" data-kompetisi="{{ $k->id }}"
-                                            data-min="{{ $l->tahun_lahir_minimal }}"
-                                            data-max="{{ $l->tahun_lahir_maksimal }}" data-jk="{{ $l->jk }}">
-                                            {{ $l->jenis_gaya }} - {{ $l->jarak }}m
-                                            ({{ $l->tahun_lahir_minimal }}/{{ $l->tahun_lahir_maksimal }})
-                                            -
-                                            {{ $l->jk }}
-                                        </option>
-                                    @endforeach
-                                    <script>
-                                        document.addEventListener('DOMContentLoaded', function() {
-                                            const kompetisiSelect = document.getElementById('kompetisi');
-                                            const lombaSelect = document.getElementById('lomba_id');
-                                            const tglLahirInput = document.getElementById('tgl_lahir');
-                                            const jenisKelaminSelect = document.getElementById('jenis_kelamin');
-
-                                            const allLombaOptions = Array.from(lombaSelect.querySelectorAll('option[data-kompetisi]'));
-
-                                            function filterLomba() {
-                                                const selectedKompetisi = kompetisiSelect.value;
-                                                const jenisKelamin = jenisKelaminSelect.value;
-                                                const tglLahir = new Date(tglLahirInput.value);
-
-                                                if (!selectedKompetisi || !jenisKelamin || !tglLahirInput.value) {
-                                                    lombaSelect.innerHTML = '<option value="">Pilih Lomba</option>';
-                                                    return;
-                                                }
-
-                                                const tahunLahir = tglLahir.getFullYear();
-
-                                                lombaSelect.innerHTML = '<option value="">Pilih Lomba</option>';
-
-                                                const filtered = allLombaOptions.filter(opt => {
-                                                    const kompetisiId = opt.getAttribute('data-kompetisi');
-                                                    const min = parseInt(opt.getAttribute('data-min'));
-                                                    const max = parseInt(opt.getAttribute('data-max'));
-                                                    const jk = opt.getAttribute('data-jk');
-
-                                                    const cocokJK = (jk === 'All') || (jk === jenisKelamin);
-
-                                                    return kompetisiId === selectedKompetisi &&
-                                                        tahunLahir >= min && tahunLahir <= max &&
-                                                        cocokJK;
-                                                });
-
-                                                filtered.forEach(opt => lombaSelect.appendChild(opt.cloneNode(true)));
-                                            }
-
-                                            kompetisiSelect.addEventListener('change', filterLomba);
-                                            tglLahirInput.addEventListener('change', filterLomba);
-                                            jenisKelaminSelect.addEventListener('change', filterLomba);
-                                        });
-                                    </script>
-                                @endforeach
-                            </select>
+                            <label class="block text-sm font-medium text-gray-700">Lomba</label>
+                            <div id="lomba-container" name="lomba_id[]" class="space-y-2 mt-2">
+                                <p class="text-gray-500 text-sm italic">Silakan pilih kompetisi, jenis kelamin, dan tanggal
+                                    lahir terlebih dahulu.</p>
+                            </div>
                         </div>
+
                         <div class="text-center">
                             <button type="submit"
                                 class="w-full sm:w-auto px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
@@ -123,30 +68,105 @@
             </div>
         </div>
 
-        <!-- Script untuk Filter Lomba -->
         <script>
             document.addEventListener('DOMContentLoaded', function() {
                 const kompetisiSelect = document.getElementById('kompetisi');
-                const lombaSelect = document.getElementById('lomba_id');
+                const jenisKelaminSelect = document.getElementById('jenis_kelamin');
+                const tglLahirInput = document.getElementById('tgl_lahir');
+                const lombaContainer = document.getElementById('lomba-container');
 
-                // Ambil semua opsi lomba yang punya atribut data-kompetisi
-                const allLombaOptions = Array.from(lombaSelect.querySelectorAll('option[data-kompetisi]'));
+                const allLombaData = @json($allLombaData);
 
-                kompetisiSelect.addEventListener('change', function() {
-                    const selectedKompetisi = this.value;
+                function formatRupiah(angka) {
+                    return 'Rp' + angka.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                }
 
-                    // Kosongkan dropdown lomba
-                    lombaSelect.innerHTML = '<option value="">Pilih Lomba</option>';
+                function renderLombaCheckbox() {
+                    const kompetisiId = kompetisiSelect.value;
+                    const jenisKelamin = jenisKelaminSelect.value;
+                    const tglLahirValue = tglLahirInput.value;
 
-                    // Filter dan tambahkan opsi yang sesuai kompetisi yang dipilih
-                    const filteredOptions = allLombaOptions.filter(opt =>
-                        opt.getAttribute('data-kompetisi') === selectedKompetisi
-                    );
+                    lombaContainer.innerHTML = '';
 
-                    filteredOptions.forEach(opt => {
-                        lombaSelect.appendChild(opt.cloneNode(true));
+                    if (!kompetisiId || !jenisKelamin || !tglLahirValue) {
+                        lombaContainer.innerHTML = `
+                    <p class="text-gray-500 text-sm italic">
+                        Silakan pilih kompetisi, jenis kelamin, dan tanggal lahir terlebih dahulu.
+                    </p>`;
+                        return;
+                    }
+
+                    const tahunLahir = new Date(tglLahirValue).getFullYear();
+
+                    const filtered = allLombaData.filter(l => {
+                        const cocokJK = (l.jk === jenisKelamin);
+                        return l.kompetisi_id == kompetisiId &&
+                            tahunLahir >= l.min &&
+                            tahunLahir <= l.max &&
+                            cocokJK;
                     });
-                });
+
+                    if (filtered.length === 0) {
+                        lombaContainer.innerHTML = `
+                    <p class="text-red-500 text-sm italic">Tidak ada lomba yang cocok.</p>`;
+                        return;
+                    }
+
+                    // Tambahkan checkbox per lomba
+                    filtered.forEach(l => {
+                        const wrapper = document.createElement('div');
+                        wrapper.classList.add('flex', 'items-center', 'gap-2');
+
+                        const checkbox = document.createElement('input');
+                        checkbox.type = 'checkbox';
+                        checkbox.name = 'lomba_id[]';
+                        checkbox.value = l.id;
+                        checkbox.id = `lomba_${l.id}`;
+                        checkbox.dataset.harga = l.harga;
+                        checkbox.classList.add('checkbox-lomba');
+
+                        const label = document.createElement('label');
+                        label.setAttribute('for', `lomba_${l.id}`);
+                        label.classList.add('text-sm', 'text-gray-700');
+                        label.innerText =
+                            `${l.jenis_gaya} - ${l.jarak}m (${l.min}/${l.max}) - ${l.jk} - ${formatRupiah(l.harga)}`;
+
+                        wrapper.appendChild(checkbox);
+                        wrapper.appendChild(label);
+                        lombaContainer.appendChild(wrapper);
+                    });
+
+                    // Elemen total harga
+                    const totalElement = document.createElement('div');
+                    totalElement.classList.add('text-right', 'mt-4', 'text-sm', 'text-gray-700', 'font-semibold');
+                    totalElement.id = 'totalHargaContainer';
+                    totalElement.innerText = `Total Harga: Rp0`;
+                    lombaContainer.appendChild(totalElement);
+
+                    // Event listener untuk semua checkbox
+                    document.querySelectorAll('.checkbox-lomba').forEach(cb => {
+                        cb.addEventListener('change', updateTotalHarga);
+                    });
+
+                    updateTotalHarga(); // panggil awal
+                }
+
+                function updateTotalHarga() {
+                    const checkboxes = document.querySelectorAll('.checkbox-lomba:checked');
+                    let total = 0;
+                    checkboxes.forEach(cb => {
+                        total += parseInt(cb.dataset.harga || 0);
+                    });
+                    const totalHargaElement = document.getElementById('totalHargaContainer');
+                    if (totalHargaElement) {
+                        totalHargaElement.innerText = `Total Harga: ${formatRupiah(total)}`;
+                    }
+                }
+
+                // Event
+                kompetisiSelect.addEventListener('change', renderLombaCheckbox);
+                jenisKelaminSelect.addEventListener('change', renderLombaCheckbox);
+                tglLahirInput.addEventListener('change', renderLombaCheckbox);
             });
         </script>
     @else
