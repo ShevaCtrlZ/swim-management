@@ -443,4 +443,19 @@ class KompetisiController extends Controller
 
         return view('klub.kompetisi', compact('klub', 'kompetisiList'));
     }
+
+    public function klubPesertaKompetisi($id)
+    {
+        $klub = Auth::user()->klub;
+
+        // Ambil data kompetisi
+        $kompetisi = Kompetisi::findOrFail($id);
+
+        // Ambil semua lomba pada kompetisi ini beserta peserta dari klub ini saja
+        $lomba = \App\Models\Lomba::with(['peserta' => function ($q) use ($klub) {
+            $q->where('klub_id', $klub->id);
+        }])->where('kompetisi_id', $id)->get();
+
+        return view('klub.lihat_kompetisi', compact('kompetisi', 'lomba'));
+    }
 }
