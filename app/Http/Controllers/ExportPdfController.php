@@ -17,4 +17,13 @@ $lomba = $kompetisi->lomba;
 return PDF::loadView('export.hasil_pdf', compact('kompetisi', 'lomba'))
            ->download('hasil_kompetisi.pdf');
     }
+
+    public function acara($id)
+    {
+        $kompetisi = Kompetisi::with(['lomba.detailLomba.peserta'])->findOrFail($id);
+$lomba = $kompetisi->lomba;
+
+return PDF::loadView('export.buku_acara_pdf', compact('kompetisi', 'lomba'))
+           ->download('buku_acara.pdf');
+    }
 }

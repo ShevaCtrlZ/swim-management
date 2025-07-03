@@ -164,7 +164,7 @@ Route::middleware(['role:klub'])->get('/test-role', function () {
 });
 
 Route::get('/export/hasil-kompetisi/{id}', [ExportPdfController::class, 'hasilKompetisi'])->name('export.hasil_pdf');
-
+Route::get('/export/hasil-kompetisi/{id}', [ExportPdfController::class, 'acara'])->name('export.buku_acara_pdf');
 
 Route::get('/hasil/export/excel/{id}', [ExportController::class, 'exportExcel'])->name('hasil.export.excel');
 
