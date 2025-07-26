@@ -12,6 +12,8 @@
         h2, h4, h5 { margin: 8px 0; }
         .seri-title { margin-top: 10px; margin-bottom: 4px; font-weight: bold; }
         .no-peserta { color: #888; font-style: italic; }
+        .success { background: #d4edda; color: #155724; padding: 8px; border-radius: 4px; margin-bottom: 8px; }
+        .error { background: #f8d7da; color: #721c24; padding: 8px; border-radius: 4px; margin-bottom: 8px; }
     </style>
 </head>
 <body>
@@ -20,51 +22,62 @@
     <p><strong>Tanggal Selesai:</strong> {{ $kompetisi->tgl_selesai }}</p>
     <p><strong>Lokasi:</strong> {{ $kompetisi->lokasi }}</p>
 
+    @if (session('error'))
+        <div class="error">
+            <strong>Error!</strong> {{ session('error') }}
+        </div>
+    @endif
+
+    @if (session('success'))
+        <div class="success">
+            <strong>Success!</strong> {{ session('success') }}
+        </div>
+    @endif
+
     @foreach ($lomba as $item)
         <div style="margin-bottom: 24px;">
             <h4>
                 {{ $item->nomor_lomba }}. {{ $item->jarak }} M GAYA {{ strtoupper($item->jenis_gaya) }} KU
                 {{ $item->tahun_lahir_minimal }} / {{ $item->tahun_lahir_maksimal }} {{ $item->jk }}
             </h4>
-            @if ($item->nomorLomba && $item->nomorLomba->isNotEmpty())
-                @foreach ($item->nomorLomba as $seri => $kelompok)
-                    <div class="seri-title">
-                        Nomor Lomba {{ $item->nomor_lomba }} - Seri {{ $seri }}
-                    </div>
-                    <table>
-                        <thead>
+            @php
+                $grouped = $item->detailLomba->groupBy('seri')->sortKeys();
+            @endphp
+            @forelse ($grouped as $seri => $kelompok)
+                <div class="seri-title">
+                    Nomor Lomba {{ $item->nomor_lomba }} - Seri {{ $seri }}
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>No Lint</th>
+                            <th>Nama Peserta</th>
+                            <th>Lahir</th>
+                            <th>Asal Klub</th>
+                            <th>Limit Waktu</th>
+                            <th>Hasil</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse ($kelompok as $detail)
                             <tr>
-                                <th>No Lint</th>
-                                <th>Nama Peserta</th>
-                                <th>Lahir</th>
-                                <th>Asal Klub</th>
-                                <th>Limit Waktu</th>
-                                <th>Hasil</th>
+                                <td>{{ $detail->no_lintasan }}</td>
+                                <td>{{ $detail->peserta->nama_peserta ?? '-' }}</td>
+                                <td>{{ $detail->peserta->tgl_lahir ?? '-' }}</td>
+                                <td>{{ $detail->peserta->asal_klub ?? '-' }}</td>
+                                <td>{{ $detail->peserta->limit ?? '-' }}</td>
+                                <td>{{ $detail->catatan_waktu ?? '-' }}</td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            @if(is_iterable($kelompok) && count($kelompok) > 0)
-                                @foreach ($kelompok as $peserta)
-                                    <tr>
-                                        <td>{{ $loop->iteration }}</td>
-                                        <td>{{ $peserta->nama_peserta }}</td>
-                                        <td>{{ $peserta->tgl_lahir }}</td>
-                                        <td>{{ $peserta->asal_klub }}</td>
-                                        <td>{{ $peserta->limit }}</td>
-                                        <td>{{ $peserta->catatan_waktu ?? '-' }}</td>
-                                    </tr>
-                                @endforeach
-                            @else
-                                <tr>
-                                    <td colspan="6" class="no-peserta">Tidak ada peserta untuk seri ini.</td>
-                                </tr>
-                            @endif
-                        </tbody>
-                    </table>
-                @endforeach
-            @else
+                        @empty
+                            <tr>
+                                <td colspan="6" class="no-peserta">Tidak ada peserta untuk seri ini.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            @empty
                 <p class="no-peserta">Tidak ada peserta untuk lomba ini.</p>
-            @endif
+            @endforelse
         </div>
     @endforeach
 </body>
