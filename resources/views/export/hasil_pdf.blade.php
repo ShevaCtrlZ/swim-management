@@ -1,16 +1,60 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="utf-8">
     <title>Hasil Kompetisi</title>
     <style>
-        body { font-family: DejaVu Sans, sans-serif; font-size: 12px; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
-        th, td { border: 1px solid #222; padding: 6px 8px; }
-        th { background: #f3f3f3; }
-        h2, h4 { margin: 8px 0; }
+        body {
+            font-family: DejaVu Sans, sans-serif;
+            font-size: 12px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 16px;
+        }
+
+        th,
+        td {
+            border: 1px solid #222;
+            padding: 6px 8px;
+        }
+
+        th {
+            background: #f3f3f3;
+        }
+
+        h2,
+        h4 {
+            margin: 8px 0;
+        }
+
+        .ttd-section {
+            margin-top: 40px;
+            text-align: right;
+        }
+
+        .ttd {
+            display: inline-block;
+            text-align: center;
+            margin-right: 60px;
+        }
+
+        .ttd .name {
+            margin-top: 80px;
+            /* space for signature */
+            font-weight: bold;
+            text-decoration: underline;
+        }
+
+        .ttd .role {
+            margin-top: 4px;
+        }
     </style>
 </head>
+
 <body>
     <h2>{{ $kompetisi->nama_kompetisi }}</h2>
     <p><strong>Tanggal Mulai:</strong> {{ $kompetisi->tgl_mulai }}</p>
@@ -34,7 +78,9 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach ($item->detailLomba->sortBy(function($d) { return $d->catatan_waktu ?? '99:99:99'; }) as $peserta)
+                @foreach ($item->detailLomba->sortBy(function ($d) {
+        return $d->catatan_waktu ?? '99:99:99';
+    }) as $peserta)
                     <tr>
                         <td>{{ $loop->iteration }}</td>
                         <td>{{ $peserta->peserta->nama_peserta ?? '-' }}</td>
@@ -47,5 +93,14 @@
             </tbody>
         </table>
     @endforeach
+
+    <div class="ttd-section">
+        <div class="ttd">
+            <p>Mengetahui,</p>
+            <p class="name">{{ $wasit_nama ?? 'Nama Wasit' }}</p>
+            <p class="role">Wasit Perlombaan</p>
+        </div>
+    </div>
 </body>
+
 </html>
