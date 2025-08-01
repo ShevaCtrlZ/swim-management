@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Det')
+@section('title', 'Kompetisi - ' . $kompetisi->nama_kompetisi)
 @section('content')
     <div class="bg-white p-4 md:p-6 rounded-lg shadow-md">
         <h2 class="text-xl md:text-2xl font-bold text-gray-800">{{ $kompetisi->nama_kompetisi }}</h2>
@@ -11,7 +11,7 @@
         </div>
 
         <a href="{{ route('export.buku_acara_pdf', $kompetisi->id) }}" target="_blank"
-           class="inline-block px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 mb-4">
+            class="inline-block px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 mb-4">
             <i class="fas fa-file-pdf mr-2"></i> Export PDF
         </a>
 
@@ -120,8 +120,7 @@
                                                             method="POST">
                                                             @csrf
                                                             <input type="text" name="hasil"
-                                                                value="{{ $peserta->catatan_waktu ?? '' }}"
-                                                                placeholder="00:00:00"
+                                                                value="{{ $peserta->catatan_waktu ?? '00:00:00' }}"
                                                                 class="border border-gray-300 rounded px-2 py-1 text-sm">
                                                             <button type="submit"
                                                                 class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs ml-2">

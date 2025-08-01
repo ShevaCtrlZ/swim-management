@@ -312,42 +312,70 @@ class KompetisiController extends Controller
 
     public function sortAllPeserta($id)
     {
-        $lomba = DB::table('lomba')
+        $lombaList = DB::table('lomba')
             ->where('kompetisi_id', $id)
             ->get();
 
-        foreach ($lomba as $item) {
-            if ($item->jumlah_lintasan <= 0) {
-                continue; // Skip if jumlah_lintasan is invalid
+        foreach ($lombaList as $lomba) {
+            $jumlahLintasan = $lomba->jumlah_lintasan;
+
+            if ($jumlahLintasan < 2) continue;
+
+            // Ambil semua peserta, dari lambat ke cepat (limit besar ke kecil)
+            $peserta = DB::table('detail_lomba')
+                ->where('detail_lomba.lomba_id', $lomba->id)
+                ->join('peserta', 'detail_lomba.peserta_id', '=', 'peserta.id')
+                ->select('detail_lomba.id', 'peserta.nama_peserta', 'peserta.limit')
+                ->orderByRaw("CASE WHEN peserta.limit IS NULL OR peserta.limit = '' THEN 1 ELSE 0 END, peserta.limit DESC")
+                ->get()
+                ->values();
+
+            $totalPeserta = $peserta->count();
+            if ($totalPeserta < 2) continue;
+
+            // Hitung jumlah seri yang dibutuhkan
+            $jumlahSeri = ceil($totalPeserta / $jumlahLintasan);
+
+            // Tentukan berapa peserta per seri (rata, seri akhir bisa lebih)
+            $seriDistribusi = array_fill(0, $jumlahSeri, intdiv($totalPeserta, $jumlahSeri));
+            $sisa = $totalPeserta % $jumlahSeri;
+
+            // Tambahkan sisa ke seri paling belakang
+            for ($i = $jumlahSeri - $sisa; $i < $jumlahSeri; $i++) {
+                $seriDistribusi[$i]++;
             }
 
-            // Ambil peserta dan urutkan dari limit terbesar ke terkecil
-            $peserta = DB::table('detail_lomba')
-                ->where('detail_lomba.lomba_id', $item->id)
-                ->join('peserta', 'detail_lomba.peserta_id', '=', 'peserta.id')
-                ->select('detail_lomba.id', 'peserta.id as peserta_id', 'peserta.nama_peserta', 'peserta.limit')
-                ->orderByRaw("CASE WHEN peserta.limit IS NULL OR peserta.limit = '' THEN 1 ELSE 0 END, peserta.limit DESC")
-                ->get();
+            // Pastikan semua seri punya minimal 2 peserta
+            foreach ($seriDistribusi as $jml) {
+                if ($jml < 2) {
+                    // Kalau tidak memungkinkan minimal 2, lanjut ke lomba berikutnya
+                    continue 2;
+                }
+            }
 
-            // Bagi peserta ke dalam seri sesuai jumlah lintasan
-            $seriPeserta = $peserta->chunk($item->jumlah_lintasan);
+            // Bagi peserta ke seri sesuai distribusi
+            $index = 0;
+            foreach ($seriDistribusi as $seri => $jumlahPeserta) {
+                $pesertaSeri = $peserta->slice($index, $jumlahPeserta);
+                $index += $jumlahPeserta;
 
-            foreach ($seriPeserta as $seriIndex => $heat) {
-                foreach ($heat as $laneIndex => $peserta) {
+                // Tetapkan no_lintasan dan seri
+                foreach ($pesertaSeri as $i => $pesertaRow) {
                     DB::table('detail_lomba')
-                        ->where('id', $peserta->id)
+                        ->where('id', $pesertaRow->id)
                         ->update([
-                            'no_lintasan' => $laneIndex + 1,
-                            'urutan' => $seriIndex + 1,
-                            'seri' => $seriIndex + 1 // pastikan seri diisi!
+                            'no_lintasan' => $i + 1,
+                            'urutan' => $seri + 1,
+                            'seri' => $seri + 1,
                         ]);
                 }
             }
         }
 
         return redirect()->route('lihat_kompetisi', ['id' => $id])
-            ->with('success', 'Semua peserta berhasil diurutkan berdasarkan limit waktu (terbesar ke terkecil) dan seri sudah diatur.');
+            ->with('success', 'Peserta berhasil dibagi secara merata ke dalam seri. Peserta dengan limit waktu besar berada di seri awal.');
     }
+
 
     public function centerMaxLimitPeserta(Request $request, $lomba_id, $seri)
     {

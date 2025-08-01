@@ -93,14 +93,6 @@
             </tbody>
         </table>
     @endforeach
-
-    <div class="ttd-section">
-        <div class="ttd">
-            <p>Mengetahui,</p>
-            <p class="name">{{ $wasit_nama ?? 'Nama Wasit' }}</p>
-            <p class="role">Wasit Perlombaan</p>
-        </div>
-    </div>
 </body>
 
 </html>

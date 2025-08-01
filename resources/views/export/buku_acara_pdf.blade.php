@@ -14,6 +14,27 @@
         .no-peserta { color: #888; font-style: italic; }
         .success { background: #d4edda; color: #155724; padding: 8px; border-radius: 4px; margin-bottom: 8px; }
         .error { background: #f8d7da; color: #721c24; padding: 8px; border-radius: 4px; margin-bottom: 8px; }
+
+        .ttd-section {
+            margin-top: 60px;
+            text-align: right;
+        }
+
+        .ttd {
+            display: inline-block;
+            text-align: center;
+            margin-right: 60px;
+        }
+
+        .ttd .name {
+            margin-top: 80px; /* untuk ruang tanda tangan */
+            font-weight: bold;
+            text-decoration: underline;
+        }
+
+        .ttd .role {
+            margin-top: 4px;
+        }
     </style>
 </head>
 <body>
@@ -61,7 +82,7 @@
                     <tbody>
                         @forelse ($kelompok as $detail)
                             <tr>
-                                <td>{{ $detail->no_lintasan }}</td>
+                                <td>{{ $loop->iteration }}</td>
                                 <td>{{ $detail->peserta->nama_peserta ?? '-' }}</td>
                                 <td>{{ $detail->peserta->tgl_lahir ?? '-' }}</td>
                                 <td>{{ $detail->peserta->asal_klub ?? '-' }}</td>
