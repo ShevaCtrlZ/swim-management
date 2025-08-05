@@ -93,6 +93,7 @@ class KompetisiController extends Controller
                         'detail_lomba.urutan',
                         'detail_lomba.seri',
                         'detail_lomba.catatan_waktu',
+                        'detail_lomba.keterangan',
                         'peserta.nama_peserta',
                         'peserta.tgl_lahir',
                         'peserta.jenis_kelamin',
@@ -287,19 +288,24 @@ class KompetisiController extends Controller
 
     public function updateHasil(Request $request, $id)
     {
-        $validator = Validator::make($request->all(), [
-            'hasil' => 'required|string|max:255',
+        // Validasi input
+        $request->validate([
+            'hasil' => 'nullable|string|regex:/^\d{2}:\d{2}:\d{2}$/',
+            'keterangan' => 'nullable|in:NS,DQ',
         ]);
 
-        if ($validator->fails()) {
-            return response()->json(['success' => false, 'errors' => $validator->errors()], 400);
-        }
+        // Jika NS atau DQ dipilih, maka waktu diset ke '00:00:00'
+        $catatanWaktu = $request->keterangan ? '00:00:00' : $request->hasil;
 
+        // Update ke database
         DB::table('detail_lomba')
             ->where('id', $id)
-            ->update(['catatan_waktu' => $request->hasil]);
+            ->update([
+                'catatan_waktu' => $catatanWaktu,
+                'keterangan' => $request->keterangan,
+            ]);
 
-        return response()->json(['success' => true]);
+        return redirect()->back()->with('success', 'Hasil lomba berhasil diperbarui.');
     }
 
     public function destroy($id)

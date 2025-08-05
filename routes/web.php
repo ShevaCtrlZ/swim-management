@@ -89,7 +89,7 @@ Route::get('/klub', [KlubController::class, 'index'])
 Route::post('/start-series', [TimerController::class, 'startSeries'])->name('timer.seri.start');
 Route::post('/stop-series', [TimerController::class, 'stopSeries']);
 Route::post('/stop-series', [LombaController::class, 'stopSeries']);
-Route::post('/update-hasil/{id}', [LombaController::class, 'updateHasil'])->name('update_hasil');
+Route::post('/update-hasil/{id}', [KompetisiController::class, 'updateHasil'])->name('update_hasil');
 
 Route::post('/get-times', [TimerController::class, 'getTimes'])->name('timer.get.times');
 

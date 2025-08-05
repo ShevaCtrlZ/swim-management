@@ -3,6 +3,13 @@
 @section('title', 'Tambahkan Peserta')
 
 @section('content')
+<style>
+    option[disabled] {
+        text-decoration: line-through;
+        color: red;
+    }
+</style>
+
     @if (auth()->check() && auth()->user()->role === 'klub')
         <div class="py-12">
             <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
@@ -27,7 +34,12 @@
                                 class="mt-1 p-3 block w-full shadow-md sm:text-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-lg">
                                 <option value="">Pilih Kompetisi</option>
                                 @foreach ($kompetisi as $k)
-                                    <option value="{{ $k->id }}">{{ $k->nama_kompetisi }}</option>
+                                    @php
+                                        $isToday = \Carbon\Carbon::parse($k->tgl_mulai)->isToday();
+                                    @endphp
+                                    <option value="{{ $k->id }}" {{ $isToday ? 'disabled' : '' }}>
+                                        {{ $k->nama_kompetisi }} {{ $isToday ? '(Tidak bisa didaftar)' : '' }}
+                                    </option>
                                 @endforeach
                             </select>
                         </div>

@@ -2,6 +2,14 @@
 
 @section('title', 'Kompetisi - ' . $kompetisi->nama_kompetisi)
 @section('content')
+    @if ($errors->any())
+        <div class="text-red-600 text-sm mb-2">
+            @foreach ($errors->all() as $error)
+                <div>{{ $error }}</div>
+            @endforeach
+        </div>
+    @endif
+
     <div class="bg-white p-4 md:p-6 rounded-lg shadow-md">
         <h2 class="text-xl md:text-2xl font-bold text-gray-800">{{ $kompetisi->nama_kompetisi }}</h2>
         <div class="mt-4 space-y-1 text-sm md:text-base">
@@ -119,15 +127,43 @@
                                                         <form action="{{ route('update_hasil', $peserta->id) }}"
                                                             method="POST">
                                                             @csrf
-                                                            <input type="text" name="hasil"
-                                                                value="{{ $peserta->catatan_waktu ?? '00:00:00' }}"
-                                                                class="border border-gray-300 rounded px-2 py-1 text-sm">
-                                                            <button type="submit"
-                                                                class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs ml-2">
-                                                                Simpan
-                                                            </button>
+                                                            <div class="flex space-x-2 items-center">
+                                                                <input type="text" name="hasil"
+                                                                    value="{{ $peserta->catatan_waktu ?? '00:00:00' }}"
+                                                                    class="border border-gray-300 rounded px-2 py-1 text-sm w-24">
+                                                                @error('hasil')
+                                                                    <div class="text-red-600 text-sm mt-1">{{ $message }}
+                                                                    </div>
+                                                                @enderror
+
+                                                                <select name="keterangan"
+                                                                    class="border border-gray-300 rounded px-2 py-1 text-sm">
+                                                                    <option value="">-</option>
+                                                                    <option value="NS"
+                                                                        {{ $peserta->keterangan == 'NS' ? 'selected' : '' }}>
+                                                                        NS</option>
+                                                                    <option value="DQ"
+                                                                        {{ $peserta->keterangan == 'DQ' ? 'selected' : '' }}>
+                                                                        DQ</option>
+                                                                </select>
+                                                                @error('keterangan')
+                                                                    <div class="text-red-600 text-sm mt-1">{{ $message }}
+                                                                    </div>
+                                                                @enderror
+
+                                                                <button type="submit"
+                                                                    class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs">
+                                                                    Simpan
+                                                                </button>
+                                                            </div>
                                                         </form>
+                                                        {{-- Tampilkan keterangan jika ada --}}
+                                                        @if ($peserta->keterangan)
+                                                            <span
+                                                                class="text-xs text-red-600 italic">{{ $peserta->keterangan }}</span>
+                                                        @endif
                                                     </td>
+
                                                 </tr>
                                             @endforeach
                                         </tbody>
