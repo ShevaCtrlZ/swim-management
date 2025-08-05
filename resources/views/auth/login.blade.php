@@ -71,11 +71,6 @@
                 <i class="fas fa-sign-in-alt mr-2"></i>Masuk
             </button>
         </form>
-
-        <p class="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
-            Belum punya akun?
-            <a href="{{ route('register') }}" class="text-indigo-600 hover:underline dark:text-indigo-400">Daftar di sini</a>
-        </p>
     </div>
 
     <style>

@@ -12,8 +12,8 @@ return new class extends Migration
             $table->id();
             $table->foreignId('lomba_id')->constrained('lomba')->onDelete('cascade');
             $table->foreignId('peserta_id')->constrained('peserta')->onDelete('cascade');
-            $table->integer('no_lintasan');
-            $table->integer('urutan');
+            $table->integer('no_lintasan')->nullable();
+            $table->integer('urutan')->nullable();
             $table->time('catatan_waktu')->nullable();
             $table->timestamps();
         });
