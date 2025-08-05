@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Auth;
 
 class KompetisiController extends Controller
 {
+    
     public function showListView(): View
     {
         return view('list_kompetisi');

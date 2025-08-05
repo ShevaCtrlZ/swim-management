@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('kompetisi', function (Blueprint $table) {
-            $table->decimal('harga', 10, 2)->after('lokasi');
+        Schema::table('detail_lomba', function (Blueprint $table) {
+            $table->integer('seri')->nullable()->after('lomba_id');
         });
     }
 
@@ -21,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('kompetisi', function (Blueprint $table) {
-            //
+        Schema::table('detail_lomba', function (Blueprint $table) {
+            $table->dropColumn('seri');
         });
     }
 };
