@@ -1,19 +1,67 @@
 {{-- filepath: /c:/laragon/www/Tugas_Akhir/resources/views/export/buku_acara_pdf.blade.php --}}
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="utf-8">
     <title>Buku Acara Kompetisi</title>
     <style>
-        body { font-family: DejaVu Sans, sans-serif; font-size: 12px; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
-        th, td { border: 1px solid #222; padding: 6px 8px; }
-        th { background: #f3f3f3; }
-        h2, h4, h5 { margin: 8px 0; }
-        .seri-title { margin-top: 10px; margin-bottom: 4px; font-weight: bold; }
-        .no-peserta { color: #888; font-style: italic; }
-        .success { background: #d4edda; color: #155724; padding: 8px; border-radius: 4px; margin-bottom: 8px; }
-        .error { background: #f8d7da; color: #721c24; padding: 8px; border-radius: 4px; margin-bottom: 8px; }
+        body {
+            font-family: DejaVu Sans, sans-serif;
+            font-size: 12px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 16px;
+        }
+
+        th,
+        td {
+            /* border: 1px solid #222; */
+            /* Hapus border pada td */
+            padding: 6px 8px;
+        }
+
+        th {
+            background: #f3f3f3;
+            border: 1px solid #222;
+            /* Tambahkan border hanya pada th jika ingin garis di header saja */
+        }
+
+        h2,
+        h4,
+        h5 {
+            margin: 8px 0;
+        }
+
+        .seri-title {
+            margin-top: 10px;
+            margin-bottom: 4px;
+            font-weight: bold;
+        }
+
+        .no-peserta {
+            color: #888;
+            font-style: italic;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 8px;
+            border-radius: 4px;
+            margin-bottom: 8px;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 8px;
+            border-radius: 4px;
+            margin-bottom: 8px;
+        }
 
         .ttd-section {
             margin-top: 60px;
@@ -27,7 +75,8 @@
         }
 
         .ttd .name {
-            margin-top: 80px; /* untuk ruang tanda tangan */
+            margin-top: 80px;
+            /* untuk ruang tanda tangan */
             font-weight: bold;
             text-decoration: underline;
         }
@@ -37,6 +86,7 @@
         }
     </style>
 </head>
+
 <body>
     <h2>{{ $kompetisi->nama_kompetisi }}</h2>
     <p><strong>Tanggal Mulai:</strong> {{ $kompetisi->tgl_mulai }}</p>
@@ -58,7 +108,7 @@
     @foreach ($lomba as $item)
         <div style="margin-bottom: 24px;">
             <h4>
-                {{ $item->nomor_lomba }}. {{ $item->jarak }} M GAYA {{ strtoupper($item->jenis_gaya) }} KU
+                {{ $item->jarak }} M GAYA {{ strtoupper($item->jenis_gaya) }} KU
                 {{ $item->tahun_lahir_minimal }} / {{ $item->tahun_lahir_maksimal }} {{ $item->jk }}
             </h4>
             @php
@@ -66,7 +116,7 @@
             @endphp
             @forelse ($grouped as $seri => $kelompok)
                 <div class="seri-title">
-                    Nomor Lomba {{ $item->nomor_lomba }} - Seri {{ $seri }}
+                    Seri {{ $seri }}
                 </div>
                 <table>
                     <thead>
@@ -77,6 +127,7 @@
                             <th>Asal Klub</th>
                             <th>Limit Waktu</th>
                             <th>Hasil</th>
+                            <th>Keterangan</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -88,6 +139,9 @@
                                 <td>{{ $detail->peserta->asal_klub ?? '-' }}</td>
                                 <td>{{ $detail->peserta->limit ?? '-' }}</td>
                                 <td>{{ $detail->catatan_waktu ?? '-' }}</td>
+                                <td>
+                                    {{ $detail->keterangan ?? '-' }}
+                                </td>
                             </tr>
                         @empty
                             <tr>
@@ -102,4 +156,5 @@
         </div>
     @endforeach
 </body>
+
 </html>

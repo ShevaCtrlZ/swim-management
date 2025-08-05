@@ -18,12 +18,15 @@
 
         th,
         td {
-            border: 1px solid #222;
+            /* border: 1px solid #222; */
+            /* Hapus border pada td */
             padding: 6px 8px;
         }
 
         th {
             background: #f3f3f3;
+            border: 1px solid #222;
+            /* Tambahkan border hanya pada th jika ingin garis di header saja */
         }
 
         h2,
@@ -63,7 +66,7 @@
 
     @foreach ($lomba as $item)
         <h4>
-            {{ $item->nomor_lomba }}. {{ $item->jarak }} M GAYA {{ strtoupper($item->jenis_gaya) }} KU
+            {{ $item->jarak }} M GAYA {{ strtoupper($item->jenis_gaya) }} KU
             {{ $item->tahun_lahir_minimal }} / {{ $item->tahun_lahir_maksimal }} {{ $item->jk }}
         </h4>
         <table>
@@ -75,6 +78,7 @@
                     <th>Asal Klub</th>
                     <th>Limit Waktu</th>
                     <th>Hasil</th>
+                    <th>Keterangan</th>
                 </tr>
             </thead>
             <tbody>
@@ -87,7 +91,12 @@
                         <td>{{ $peserta->peserta->tgl_lahir ?? '-' }}</td>
                         <td>{{ $peserta->peserta->asal_klub ?? '-' }}</td>
                         <td>{{ $peserta->limit }}</td>
-                        <td>{{ $peserta->catatan_waktu ?? '-' }}</td>
+                        <td>
+                            {{ $peserta->catatan_waktu ?? '-' }}
+                        </td>
+                        <td>
+                            {{ $peserta->keterangan ?? '-' }}
+                        </td>
                     </tr>
                 @endforeach
             </tbody>
