@@ -38,7 +38,7 @@
                                 </td>
                                 <td class="px-4 py-2">{{ $peserta->peserta->asal_klub ?? '-' }}
                                 </td>
-                                <td class="px-4 py-2">{{ $peserta->limit }}</td>
+                                <td class="px-4 py-2">{{ $peserta->peserta->limit ?? '-' }}</td>
                                 <td class="px-4 py-2">{{ $peserta->catatan_waktu ?? '-' }}</td>
                                 <td class="px-4 py-2">{{ $peserta->keterangan ?? '-' }}</td>
                             </tr>

@@ -31,6 +31,6 @@ class Lomba extends Model
     public function peserta()
     {
         return $this->belongsToMany(Peserta::class, 'detail_lomba', 'lomba_id', 'peserta_id')
-            ->withPivot('no_lintasan', 'urutan', 'catatan_waktu');
+            ->withPivot('no_lintasan', 'urutan', 'catatan_waktu',);
     }
 }

@@ -90,7 +90,7 @@
                         <td>{{ $peserta->peserta->nama_peserta ?? '-' }}</td>
                         <td>{{ $peserta->peserta->tgl_lahir ?? '-' }}</td>
                         <td>{{ $peserta->peserta->asal_klub ?? '-' }}</td>
-                        <td>{{ $peserta->limit }}</td>
+                        <td>{{ $peserta->peserta->limit ?? '-' }}</td>
                         <td>
                             {{ $peserta->catatan_waktu ?? '-' }}
                         </td>
