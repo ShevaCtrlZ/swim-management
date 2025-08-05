@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Auth;
 
 class KompetisiController extends Controller
 {
-    
+
     public function showListView(): View
     {
         return view('list_kompetisi');
@@ -328,7 +328,6 @@ class KompetisiController extends Controller
 
             if ($jumlahLintasan < 2) continue;
 
-            // Ambil semua peserta, dari lambat ke cepat (limit besar ke kecil)
             $peserta = DB::table('detail_lomba')
                 ->where('detail_lomba.lomba_id', $lomba->id)
                 ->join('peserta', 'detail_lomba.peserta_id', '=', 'peserta.id')
@@ -340,48 +339,77 @@ class KompetisiController extends Controller
             $totalPeserta = $peserta->count();
             if ($totalPeserta < 2) continue;
 
-            // Hitung jumlah seri yang dibutuhkan
-            $jumlahSeri = ceil($totalPeserta / $jumlahLintasan);
-
-            // Tentukan berapa peserta per seri (rata, seri akhir bisa lebih)
-            $seriDistribusi = array_fill(0, $jumlahSeri, intdiv($totalPeserta, $jumlahSeri));
-            $sisa = $totalPeserta % $jumlahSeri;
-
-            // Tambahkan sisa ke seri paling belakang
-            for ($i = $jumlahSeri - $sisa; $i < $jumlahSeri; $i++) {
-                $seriDistribusi[$i]++;
+            // Jika peserta <= lintasan, buat hanya 1 seri
+            if ($totalPeserta <= $jumlahLintasan) {
+                foreach ($peserta as $i => $pesertaRow) {
+                    DB::table('detail_lomba')
+                        ->where('id', $pesertaRow->id)
+                        ->update([
+                            'no_lintasan' => $i + 1,
+                            'urutan' => 1,
+                            'seri' => 1,
+                        ]);
+                }
+                continue;
             }
 
-            // Pastikan semua seri punya minimal 2 peserta
-            foreach ($seriDistribusi as $jml) {
-                if ($jml < 2) {
-                    // Kalau tidak memungkinkan minimal 2, lanjut ke lomba berikutnya
-                    continue 2;
+            $jumlahSeri = ceil($totalPeserta / $jumlahLintasan);
+
+            // Distribusi awal (dari belakang agar seri akhir lebih banyak)
+            $seriDistribusi = array_fill(0, $jumlahSeri, 0);
+            $sisaPeserta = $totalPeserta;
+            $currentSeri = $jumlahSeri - 1;
+
+            while ($sisaPeserta > 0) {
+                $toAdd = min($jumlahLintasan, $sisaPeserta);
+                $seriDistribusi[$currentSeri] = $toAdd;
+                $sisaPeserta -= $toAdd;
+                $currentSeri--;
+            }
+
+            // Gabungkan seri dengan peserta < 2 ke seri setelahnya
+            for ($i = 0; $i < count($seriDistribusi); $i++) {
+                if ($seriDistribusi[$i] > 0 && $seriDistribusi[$i] < 2) {
+                    if (isset($seriDistribusi[$i + 1])) {
+                        $seriDistribusi[$i + 1] += $seriDistribusi[$i];
+                        $seriDistribusi[$i] = 0;
+                    } else {
+                        continue 2;
+                    }
                 }
             }
 
-            // Bagi peserta ke seri sesuai distribusi
+            // Reset seri lokal (agar selalu dimulai dari 1)
+            $localSeriNumber = 1;
+
+            // Bagi peserta sesuai distribusi
             $index = 0;
-            foreach ($seriDistribusi as $seri => $jumlahPeserta) {
+            foreach ($seriDistribusi as $jumlahPeserta) {
+                if ($jumlahPeserta === 0) continue;
+
                 $pesertaSeri = $peserta->slice($index, $jumlahPeserta);
                 $index += $jumlahPeserta;
 
-                // Tetapkan no_lintasan dan seri
                 foreach ($pesertaSeri as $i => $pesertaRow) {
                     DB::table('detail_lomba')
                         ->where('id', $pesertaRow->id)
                         ->update([
                             'no_lintasan' => $i + 1,
-                            'urutan' => $seri + 1,
-                            'seri' => $seri + 1,
+                            'urutan' => $localSeriNumber,
+                            'seri' => $localSeriNumber,
                         ]);
                 }
+
+                $localSeriNumber++; // tambahkan seri hanya dalam satu lomba
             }
         }
 
         return redirect()->route('lihat_kompetisi', ['id' => $id])
-            ->with('success', 'Peserta berhasil dibagi secara merata ke dalam seri. Peserta dengan limit waktu besar berada di seri awal.');
+            ->with('success', 'Peserta berhasil dibagi ke dalam seri. Seri awal berisi peserta paling lambat dan jumlah lebih sedikit.');
     }
+
+
+
 
 
     public function centerMaxLimitPeserta(Request $request, $lomba_id, $seri)
