@@ -88,6 +88,18 @@
 </head>
 
 <body>
+    <div style="position: relative; width:100%; min-height:70px; margin-bottom:8px;">
+        <img src="{{ public_path('gambar/logo.png') }}" alt="GSC"
+            style="height:70px; position:absolute; left:0; top:0;">
+        <img src="{{ public_path('gambar/logo1.png') }}" alt="Akuatik Indonesia"
+            style="height:70px; position:absolute; right:0; top:0;">
+    </div>
+    <div style="text-align:center; margin-bottom:16px;">
+        <strong>BUKU ACARA<br>
+            HAORNAS CUP SWIMMING 2025<br>
+            SE PACITAN<br>
+            PACITAN, 14 SEPTEMBER 2025</strong>
+    </div>
     <h2>{{ $kompetisi->nama_kompetisi }}</h2>
     <p><strong>Tanggal Mulai:</strong> {{ $kompetisi->tgl_mulai }}</p>
     <p><strong>Tanggal Selesai:</strong> {{ $kompetisi->tgl_selesai }}</p>
