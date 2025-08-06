@@ -8,7 +8,7 @@ class Detaillomba extends Model
 {
     protected $table = 'detail_lomba';
     protected $primaryKey = 'id';
-    protected $fillable = ['lomba_id', 'seri', 'peserta_id', 'no_lintasan', 'urutan', 'catatan_waktu', 'keterangan'];
+    protected $fillable = ['lomba_id', 'seri', 'peserta_id', 'no_lintasan', 'urutan', 'catatan_waktu', 'keterangan', 'limit'];
 
     public function lomba()
     {

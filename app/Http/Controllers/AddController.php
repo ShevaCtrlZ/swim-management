@@ -20,15 +20,25 @@ class AddController extends Controller
 
     public function storeData(Request $request)
     {
+        // dd($request->all());
+
         // Validasi data awal
         $request->validate([
             'nama_peserta' => 'required|string|max:255',
             'jenis_kelamin' => 'required|in:L,P',
             'tgl_lahir' => 'required|date',
-            'limit' => 'required',
             'lomba_id' => 'required|array',
             'lomba_id.*' => 'exists:lomba,id',
+            'limit_per_lomba' => 'required|array',
+            'limit_per_lomba.*' => ['required', 'regex:/^\d{2}:\d{2}:\d{2}$/'],
+        ], [
+
+            'limit_per_lomba.required' => 'Field limit wajib diisi.',
+            'limit_per_lomba.*.required' => 'Limit untuk setiap lomba wajib diisi.',
+            'limit_per_lomba.*.integer' => 'Limit harus berupa angka.',
+            'limit_per_lomba.*.min' => 'Limit minimal bernilai 1.',
         ]);
+
 
         $tahunLahir = date('Y', strtotime($request->tgl_lahir));
 
@@ -50,31 +60,48 @@ class AddController extends Controller
             'jenis_kelamin' => $request->jenis_kelamin,
             'tgl_lahir' => $request->tgl_lahir,
             'asal_klub' => $asal_klub,
-            'limit' => $request->limit,
             'klub_id' => $user->klub_id,
             'lomba_id' => $firstLombaId, // karena bisa banyak
         ]);
 
         $totalHarga = 0;
         foreach ($request->lomba_id as $lombaId) {
-            $lomba = Lomba::findOrFail($lombaId);
-            $totalHarga += $lomba->harga;
+            $limitValue = $request->limit_per_lomba[$lombaId] ?? null;
+
+            // if (!$limitValue || $limitValue === '99:99:99') {
+            //     return back()->with('error', "Limit untuk lomba ID $lombaId belum diisi atau default.");
+            // }
 
             Detaillomba::create([
-                'lomba_id' => $lomba->id,
                 'peserta_id' => $peserta->id,
-                'no_lintasan' => $request->no_lintasan ?? null,
+                'lomba_id' => $lombaId,
+                'limit' => $limitValue,
+                'no_lintasan' => null,
                 'urutan' => null,
                 'catatan_waktu' => null,
             ]);
         }
+        foreach ($request->lomba_id as $lombaId) {
+            if (empty($request->limit_per_lomba[$lombaId])) {
+                return back()->with('error', "Limit untuk lomba ID $lombaId belum diisi.");
+            }
+        }
+
+        // Validasi khusus bundling
+        if ($request->metode === 'bundling') {
+            $totalHarga = 120000; // harga tetap
+            if (count($request->lomba_id) !== 4) {
+                return back()->withErrors(['Bundling harus memilih tepat 4 lomba.']);
+            }
+        }
+
 
         // Tambahkan total harga ke kolom klub
         $klub = $user->klub;
         $klub->increment('total_harga', $totalHarga);
 
 
-        return redirect()->route('add')->with('success', 'Peserta berhasil ditambahkan.');
+        return redirect()->back()->with('success', 'Peserta dan detail lomba berhasil ditambahkan.');
     }
 
     public function list()

@@ -3,12 +3,28 @@
 @section('title', 'Tambahkan Peserta')
 
 @section('content')
-<style>
-    option[disabled] {
-        text-decoration: line-through;
-        color: red;
-    }
-</style>
+    <style>
+        option[disabled] {
+            text-decoration: line-through;
+            color: red;
+        }
+    </style>
+    @if ($errors->any())
+        <div class="bg-red-100 text-red-700 p-4 rounded mb-4">
+            <strong>Terjadi kesalahan:</strong>
+            <ul class="list-disc ml-5">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+    @if (session('success'))
+        <div class="bg-green-100 text-green-800 p-4 rounded mb-4">
+            {{ session('success') }}
+        </div>
+    @endif
+
 
     @if (auth()->check() && auth()->user()->role === 'klub')
         <div class="py-12">
@@ -57,10 +73,14 @@
                             </select>
                         </div>
                         <div class="mb-4">
-                            <label for="limit" class="block text-sm font-medium text-gray-700">Limit</label>
-                            <input type="text" name="limit" id="limit" placeholder="Masukkan limit peserta"
+                            <label for="metode" class="block text-sm font-medium text-gray-700">Metode Pendaftaran</label>
+                            <select name="metode" id="metode"
                                 class="mt-1 p-3 block w-full shadow-md sm:text-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-lg">
+                                <option value="reguler">Reguler</option>
+                                <option value="bundling">Bundling</option>
+                            </select>
                         </div>
+
                         <div class="mb-4">
                             <label class="block text-sm font-medium text-gray-700">Lomba</label>
                             <div id="lomba-container" name="lomba_id[]" class="space-y-2 mt-2">
@@ -86,8 +106,47 @@
                 const jenisKelaminSelect = document.getElementById('jenis_kelamin');
                 const tglLahirInput = document.getElementById('tgl_lahir');
                 const lombaContainer = document.getElementById('lomba-container');
-
                 const allLombaData = @json($allLombaData);
+                const metodeSelect = document.getElementById('metode');
+
+                // Tambahkan listener metode bundling
+                metodeSelect.addEventListener('change', handleBundling);
+
+                function handleBundling() {
+                    const isBundling = metodeSelect.value === 'bundling';
+                    const checkboxes = document.querySelectorAll('.checkbox-lomba');
+
+                    checkboxes.forEach(cb => {
+                        cb.disabled = false; // reset disable
+                    });
+
+                    if (isBundling) {
+                        enforceBundlingLimit();
+                    }
+                }
+
+                function enforceBundlingLimit() {
+                    const checkboxes = document.querySelectorAll('.checkbox-lomba');
+
+                    checkboxes.forEach(cb => {
+                        cb.addEventListener('change', function() {
+                            const selected = document.querySelectorAll('.checkbox-lomba:checked');
+
+                            if (selected.length >= 4) {
+                                checkboxes.forEach(cb2 => {
+                                    if (!cb2.checked) {
+                                        cb2.disabled = true;
+                                    }
+                                });
+                            } else {
+                                checkboxes.forEach(cb2 => {
+                                    cb2.disabled = false;
+                                });
+                            }
+                        });
+                    });
+                }
+
 
                 function formatRupiah(angka) {
                     return 'Rp' + angka.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
@@ -124,10 +183,12 @@
                         return;
                     }
 
-                    // Tambahkan checkbox per lomba
                     filtered.forEach(l => {
                         const wrapper = document.createElement('div');
-                        wrapper.classList.add('flex', 'items-center', 'gap-2');
+                        wrapper.classList.add('grid', 'grid-cols-2', 'gap-2', 'items-center');
+
+                        const checkboxWrapper = document.createElement('div');
+                        checkboxWrapper.classList.add('flex', 'items-center', 'gap-2');
 
                         const checkbox = document.createElement('input');
                         checkbox.type = 'checkbox';
@@ -140,13 +201,24 @@
                         const label = document.createElement('label');
                         label.setAttribute('for', `lomba_${l.id}`);
                         label.classList.add('text-sm', 'text-gray-700');
-                        label.innerText =
-                            `${l.jenis_gaya} - ${l.jarak}m (${l.min}/${l.max}) - ${l.jk} - ${formatRupiah(l.harga)}`;
+                        label.innerText = `${l.jenis_gaya} - ${l.jarak}m (${formatRupiah(l.harga)})`;
 
-                        wrapper.appendChild(checkbox);
-                        wrapper.appendChild(label);
+                        checkboxWrapper.appendChild(checkbox);
+                        checkboxWrapper.appendChild(label);
+
+                        const limitInput = document.createElement('input');
+                        limitInput.type = 'text';
+                        limitInput.name = `limit_per_lomba[${l.id}]`;
+                        limitInput.value = '99:99:99'; // <-- nilai default
+                        limitInput.placeholder = 'Format: HH:MM:SS';
+                        limitInput.classList.add('p-2', 'border', 'rounded', 'w-full');
+
+                        wrapper.appendChild(checkboxWrapper);
+                        wrapper.appendChild(limitInput);
+
                         lombaContainer.appendChild(wrapper);
                     });
+
 
                     // Elemen total harga
                     const totalElement = document.createElement('div');
@@ -164,16 +236,23 @@
                 }
 
                 function updateTotalHarga() {
-                    const checkboxes = document.querySelectorAll('.checkbox-lomba:checked');
-                    let total = 0;
-                    checkboxes.forEach(cb => {
-                        total += parseInt(cb.dataset.harga || 0);
-                    });
+                    const metode = metodeSelect.value;
                     const totalHargaElement = document.getElementById('totalHargaContainer');
-                    if (totalHargaElement) {
+
+                    if (!totalHargaElement) return;
+
+                    if (metode === 'bundling') {
+                        totalHargaElement.innerText = `Total Harga: Rp120.000`;
+                    } else {
+                        const checkboxes = document.querySelectorAll('.checkbox-lomba:checked');
+                        let total = 0;
+                        checkboxes.forEach(cb => {
+                            total += parseInt(cb.dataset.harga || 0);
+                        });
                         totalHargaElement.innerText = `Total Harga: ${formatRupiah(total)}`;
                     }
                 }
+
 
                 // Event
                 kompetisiSelect.addEventListener('change', renderLombaCheckbox);

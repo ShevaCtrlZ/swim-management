@@ -99,7 +99,7 @@ class KompetisiController extends Controller
                         'peserta.tgl_lahir',
                         'peserta.jenis_kelamin',
                         'peserta.asal_klub',
-                        'peserta.limit',
+                        'detail_lomba.limit',
                     )
                     ->orderBy('detail_lomba.seri')
                     ->orderBy('detail_lomba.no_lintasan')
@@ -135,7 +135,7 @@ class KompetisiController extends Controller
                         'peserta.tgl_lahir',
                         'peserta.jenis_kelamin',
                         'peserta.asal_klub',
-                        'peserta.limit',
+                        'detail_lomba.limit',
                     )
                     ->orderBy('detail_lomba.no_lintasan')
                     ->get();
@@ -331,8 +331,8 @@ class KompetisiController extends Controller
             $peserta = DB::table('detail_lomba')
                 ->where('detail_lomba.lomba_id', $lomba->id)
                 ->join('peserta', 'detail_lomba.peserta_id', '=', 'peserta.id')
-                ->select('detail_lomba.id', 'peserta.nama_peserta', 'peserta.limit')
-                ->orderByRaw("CASE WHEN peserta.limit IS NULL OR peserta.limit = '' THEN 1 ELSE 0 END, peserta.limit DESC")
+                ->select('detail_lomba.id', 'peserta.nama_peserta', 'detail_lomba.limit')
+                ->orderByRaw("CASE WHEN detail_lomba.limit IS NULL OR detail_lomba.limit = '' THEN 1 ELSE 0 END, detail_lomba.limit DESC")
                 ->get()
                 ->values();
 
@@ -433,7 +433,7 @@ class KompetisiController extends Controller
             ->where('detail_lomba.lomba_id', $lomba_id)
             ->where('detail_lomba.seri', $seri)
             ->join('peserta', 'detail_lomba.peserta_id', '=', 'peserta.id')
-            ->select('detail_lomba.id', 'detail_lomba.peserta_id', 'peserta.limit')
+            ->select('detail_lomba.id', 'detail_lomba.peserta_id', 'detail_lomba.limit')
             ->orderBy('detail_lomba.urutan')
             ->get();
 
