@@ -143,13 +143,13 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse ($kelompok as $detail)
+                        @forelse ($kelompok->sortBy('no_lintasan') as $detail)
                             <tr>
-                                <td>{{ $loop->iteration }}</td>
+                                <td>{{ $detail->no_lintasan ?? $loop->iteration }}</td>
                                 <td>{{ $detail->peserta->nama_peserta ?? '-' }}</td>
                                 <td>{{ $detail->peserta->tgl_lahir ?? '-' }}</td>
                                 <td>{{ $detail->peserta->asal_klub ?? '-' }}</td>
-                                <td>{{ $detail->peserta->limit ?? '-' }}</td>
+                                <td>{{ $detail->limit ?? '-' }}</td>
                                 <td>{{ $detail->catatan_waktu ?? '-' }}</td>
                                 <td>
                                     {{ $detail->keterangan ?? '-' }}
