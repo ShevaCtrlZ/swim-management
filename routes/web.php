@@ -129,12 +129,18 @@ Route::middleware('auth')->group(function () {
 // Rute untuk klub
 Route::middleware(['auth', 'role:klub'])->group(function () {
     // Input peserta
-    Route::get('/add', [AddController::class, 'showAddView'])->name('add');
+    // Route::get('/add', [AddController::class, 'showAddView'])->name('add');
     Route::get('/add', [AddController::class, 'create'])->name('add');
     Route::post('/store-data', [AddController::class, 'storeData']);
     Route::get('/info-klub', [KlubController::class, 'info'])->name('info.klub');
     Route::get('/kompetisi/klub', [KompetisiController::class, 'klub'])->name('kompetisi.klub');
     Route::get('/kompetisi/klub/{id}/peserta', [KompetisiController::class, 'klubPesertaKompetisi'])->name('kompetisi.klub.peserta');
+    Route::get('/peserta', [PesertaController::class, 'index'])->name('peserta.index');
+    Route::post('/peserta.store', [PesertaController::class, 'store'])->name('peserta.store');
+    // ...existing code...
+    Route::get('/get-peserta-data', [AddController::class, 'getPesertaData']);
+    // web.php (routes)
+    Route::get('/get-lomba-terpilih/{pesertaId}', [AddController::class, 'getLombaTerpilih']);
 });
 
 Route::middleware('api')->group(function () {

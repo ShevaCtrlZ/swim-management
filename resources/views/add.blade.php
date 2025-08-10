@@ -41,8 +41,17 @@
                         @csrf
                         <div class="mb-4">
                             <label for="nama_peserta" class="block text-sm font-medium text-gray-700">Nama</label>
-                            <input type="text" name="nama_peserta" id="nama_peserta" placeholder="Masukkan nama peserta"
-                                class="mt-1 p-3 block w-full shadow-md sm:text-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-lg">
+                            <select name="peserta_id" id="peserta_id"
+                                class="form-control mt-1 p-3 block w-full shadow-md sm:text-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-lg"
+                                required>
+                                <option value="">-- Pilih Peserta --</option>
+                                @foreach ($peserta as $p)
+                                    <option value="{{ $p->id }}" data-tgl="{{ $p->tgl_lahir }}"
+                                        data-jk="{{ $p->jenis_kelamin }}">
+                                        {{ $p->nama_peserta }}
+                                    </option>
+                                @endforeach
+                            </select>
                         </div>
                         <div class="mb-4">
                             <label for="kompetisi" class="block text-sm font-medium text-gray-700">Kompetisi</label>
@@ -59,18 +68,19 @@
                                 @endforeach
                             </select>
                         </div>
+                        {{-- Tanggal Lahir (read-only) --}}
                         <div class="mb-4">
-                            <label for="tgl_lahir" class="block text-sm font-medium text-gray-700">Tanggal Lahir</label>
-                            <input type="date" name="tgl_lahir" id="tgl_lahir"
-                                class="mt-1 p-3 block w-full shadow-md sm:text-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-lg">
+                            <label for="tgl_lahir" class="form-label">Tanggal Lahir</label>
+                            <input type="date" id="tgl_lahir"
+                                class="form-control mt-1 p-3 block w-full shadow-md sm:text-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-lg"
+                                readonly>
                         </div>
+
                         <div class="mb-4">
-                            <label for="jenis_kelamin" class="block text-sm font-medium text-gray-700">Jenis Kelamin</label>
-                            <select name="jenis_kelamin" id="jenis_kelamin"
-                                class="mt-1 p-3 block w-full shadow-md sm:text-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-lg">
-                                <option value="L">Laki-laki</option>
-                                <option value="P">Perempuan</option>
-                            </select>
+                            <label for="jenis_kelamin" class="form-label">Jenis Kelamin</label>
+                            <input type="text" id="jenis_kelamin"
+                                class="form-control mt-1 p-3 block w-full shadow-md sm:text-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-lg"
+                                readonly>
                         </div>
                         <div class="mb-4">
                             <label for="metode" class="block text-sm font-medium text-gray-700">Metode Pendaftaran</label>
@@ -83,7 +93,7 @@
 
                         <div class="mb-4">
                             <label class="block text-sm font-medium text-gray-700">Lomba</label>
-                            <div id="lomba-container" name="lomba_id[]" class="space-y-2 mt-2">
+                            <div id="listLomba" class="space-y-2 mt-2">
                                 <p class="text-gray-500 text-sm italic">Silakan pilih kompetisi, jenis kelamin, dan tanggal
                                     lahir terlebih dahulu.</p>
                             </div>
@@ -101,164 +111,127 @@
         </div>
 
         <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                const kompetisiSelect = document.getElementById('kompetisi');
-                const jenisKelaminSelect = document.getElementById('jenis_kelamin');
-                const tglLahirInput = document.getElementById('tgl_lahir');
-                const lombaContainer = document.getElementById('lomba-container');
-                const allLombaData = @json($allLombaData);
-                const metodeSelect = document.getElementById('metode');
+            const allLomba = @json($lomba);
+            const hargaBundling = {{ $hargaBundling }};
+            const syaratBundling = {{ $syaratBundling }};
+            window.lombaSudahDipilih = @json($lombaSudahDipilih);
 
-                // Tambahkan listener metode bundling
-                metodeSelect.addEventListener('change', handleBundling);
-
-                function handleBundling() {
-                    const isBundling = metodeSelect.value === 'bundling';
-                    const checkboxes = document.querySelectorAll('.checkbox-lomba');
-
-                    checkboxes.forEach(cb => {
-                        cb.disabled = false; // reset disable
-                    });
-
-                    if (isBundling) {
-                        enforceBundlingLimit();
-                    }
+            // Fungsi untuk fetch lomba yang sudah dipilih peserta dan render ulang lomba
+            function fetchLombaSudahDipilih(pesertaId, tgl, jk) {
+                if (!pesertaId) {
+                    window.lombaSudahDipilih = [];
+                    document.getElementById('listLomba').innerHTML = '<em>Pilih peserta terlebih dahulu</em>';
+                    return;
                 }
 
-                function enforceBundlingLimit() {
-                    const checkboxes = document.querySelectorAll('.checkbox-lomba');
-
-                    checkboxes.forEach(cb => {
-                        cb.addEventListener('change', function() {
-                            const selected = document.querySelectorAll('.checkbox-lomba:checked');
-
-                            if (selected.length >= 4) {
-                                checkboxes.forEach(cb2 => {
-                                    if (!cb2.checked) {
-                                        cb2.disabled = true;
-                                    }
-                                });
-                            } else {
-                                checkboxes.forEach(cb2 => {
-                                    cb2.disabled = false;
-                                });
-                            }
-                        });
+                fetch(`/get-lomba-terpilih/${pesertaId}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        window.lombaSudahDipilih = data;
+                        renderLomba(tgl, jk);
+                    })
+                    .catch(() => {
+                        window.lombaSudahDipilih = [];
+                        renderLomba(tgl, jk);
                     });
+            }
+
+            document.getElementById('peserta_id').addEventListener('change', function() {
+                let pesertaId = this.value;
+                let pesertaOption = this.options[this.selectedIndex];
+                let tgl = pesertaOption.getAttribute('data-tgl');
+                let jk = pesertaOption.getAttribute('data-jk');
+
+                document.getElementById('tgl_lahir').value = tgl || '';
+                document.getElementById('jenis_kelamin').value = jk || '';
+
+                if (!pesertaId) {
+                    document.getElementById('listLomba').innerHTML = '<em>Pilih peserta terlebih dahulu</em>';
+                    return;
                 }
 
-
-                function formatRupiah(angka) {
-                    return 'Rp' + angka.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-                }
-
-                function renderLombaCheckbox() {
-                    const kompetisiId = kompetisiSelect.value;
-                    const jenisKelamin = jenisKelaminSelect.value;
-                    const tglLahirValue = tglLahirInput.value;
-
-                    lombaContainer.innerHTML = '';
-
-                    if (!kompetisiId || !jenisKelamin || !tglLahirValue) {
-                        lombaContainer.innerHTML = `
-                    <p class="text-gray-500 text-sm italic">
-                        Silakan pilih kompetisi, jenis kelamin, dan tanggal lahir terlebih dahulu.
-                    </p>`;
-                        return;
-                    }
-
-                    const tahunLahir = new Date(tglLahirValue).getFullYear();
-
-                    const filtered = allLombaData.filter(l => {
-                        const cocokJK = (l.jk === jenisKelamin);
-                        return l.kompetisi_id == kompetisiId &&
-                            tahunLahir >= l.min &&
-                            tahunLahir <= l.max &&
-                            cocokJK;
-                    });
-
-                    if (filtered.length === 0) {
-                        lombaContainer.innerHTML = `
-                    <p class="text-red-500 text-sm italic">Tidak ada lomba yang cocok.</p>`;
-                        return;
-                    }
-
-                    filtered.forEach(l => {
-                        const wrapper = document.createElement('div');
-                        wrapper.classList.add('grid', 'grid-cols-2', 'gap-2', 'items-center');
-
-                        const checkboxWrapper = document.createElement('div');
-                        checkboxWrapper.classList.add('flex', 'items-center', 'gap-2');
-
-                        const checkbox = document.createElement('input');
-                        checkbox.type = 'checkbox';
-                        checkbox.name = 'lomba_id[]';
-                        checkbox.value = l.id;
-                        checkbox.id = `lomba_${l.id}`;
-                        checkbox.dataset.harga = l.harga;
-                        checkbox.classList.add('checkbox-lomba');
-
-                        const label = document.createElement('label');
-                        label.setAttribute('for', `lomba_${l.id}`);
-                        label.classList.add('text-sm', 'text-gray-700');
-                        label.innerText = `${l.jenis_gaya} - ${l.jarak}m (${formatRupiah(l.harga)})`;
-
-                        checkboxWrapper.appendChild(checkbox);
-                        checkboxWrapper.appendChild(label);
-
-                        const limitInput = document.createElement('input');
-                        limitInput.type = 'text';
-                        limitInput.name = `limit_per_lomba[${l.id}]`;
-                        limitInput.value = '99:99:99'; // <-- nilai default
-                        limitInput.placeholder = 'Format: HH:MM:SS';
-                        limitInput.classList.add('p-2', 'border', 'rounded', 'w-full');
-
-                        wrapper.appendChild(checkboxWrapper);
-                        wrapper.appendChild(limitInput);
-
-                        lombaContainer.appendChild(wrapper);
-                    });
-
-
-                    // Elemen total harga
-                    const totalElement = document.createElement('div');
-                    totalElement.classList.add('text-right', 'mt-4', 'text-sm', 'text-gray-700', 'font-semibold');
-                    totalElement.id = 'totalHargaContainer';
-                    totalElement.innerText = `Total Harga: Rp0`;
-                    lombaContainer.appendChild(totalElement);
-
-                    // Event listener untuk semua checkbox
-                    document.querySelectorAll('.checkbox-lomba').forEach(cb => {
-                        cb.addEventListener('change', updateTotalHarga);
-                    });
-
-                    updateTotalHarga(); // panggil awal
-                }
-
-                function updateTotalHarga() {
-                    const metode = metodeSelect.value;
-                    const totalHargaElement = document.getElementById('totalHargaContainer');
-
-                    if (!totalHargaElement) return;
-
-                    if (metode === 'bundling') {
-                        totalHargaElement.innerText = `Total Harga: Rp120.000`;
-                    } else {
-                        const checkboxes = document.querySelectorAll('.checkbox-lomba:checked');
-                        let total = 0;
-                        checkboxes.forEach(cb => {
-                            total += parseInt(cb.dataset.harga || 0);
-                        });
-                        totalHargaElement.innerText = `Total Harga: ${formatRupiah(total)}`;
-                    }
-                }
-
-
-                // Event
-                kompetisiSelect.addEventListener('change', renderLombaCheckbox);
-                jenisKelaminSelect.addEventListener('change', renderLombaCheckbox);
-                tglLahirInput.addEventListener('change', renderLombaCheckbox);
+                fetchLombaSudahDipilih(pesertaId, tgl, jk);
             });
+
+            document.getElementById('kompetisi').addEventListener('change', function() {
+                let pesertaSelect = document.getElementById('peserta_id');
+                let pesertaId = pesertaSelect.value;
+                let pesertaOption = pesertaSelect.options[pesertaSelect.selectedIndex];
+                let tgl = pesertaOption ? pesertaOption.getAttribute('data-tgl') : '';
+                let jk = pesertaOption ? pesertaOption.getAttribute('data-jk') : '';
+
+                document.getElementById('tgl_lahir').value = tgl || '';
+                document.getElementById('jenis_kelamin').value = jk || '';
+
+                if (tgl && jk) {
+                    // Fetch lombaSudahDipilih berdasarkan peserta saat ini, lalu render
+                    fetchLombaSudahDipilih(pesertaId, tgl, jk);
+                } else {
+                    document.getElementById('listLomba').innerHTML = '<em>Pilih peserta terlebih dahulu</em>';
+                }
+            });
+
+            function renderLomba(tgl, jk) {
+                let tahunLahir = parseInt(tgl.split('-')[0]);
+                let html = '';
+
+                allLomba.forEach(l => {
+                    // skip jika lomba sudah dipilih peserta
+                    if (window.lombaSudahDipilih.includes(l.id)) return;
+
+                    let syaratJK = (l.jk === 'L' || l.jk === 'P') ? (l.jk === jk) : true;
+                    let syaratUmur = tahunLahir >= l.min && tahunLahir <= l.max;
+
+                    if (syaratJK && syaratUmur) {
+                        html += `
+            <div class="flex items-center space-x-4 mb-2">
+                <label class="flex items-center space-x-2">
+                    <input type="checkbox" name="lomba_id[]" value="${l.id}" class="check-lomba" data-harga="${l.harga}">
+                    <span>${l.jenis_gaya} ${l.jarak}m (Rp ${parseInt(l.harga).toLocaleString()})</span>
+                </label>
+                <input 
+                    type="text" 
+                    name="limit_per_lomba[${l.id}]" 
+                    value="99:99:99" 
+                    class="p-2 border rounded w-36"
+                    title="Format harus HH:MM:SS, misal 01:30:00"
+                />
+            </div>
+        `;
+                    }
+                });
+
+                if (html === '') {
+                    html = '<em>Tidak ada lomba yang sesuai atau sudah dipilih.</em>';
+                }
+
+                document.getElementById('listLomba').innerHTML = html;
+
+                document.querySelectorAll('.check-lomba').forEach(cb => {
+                    cb.addEventListener('change', hitungTotal);
+                });
+
+                hitungTotal();
+            }
+
+            function hitungTotal() {
+                let checkboxes = document.querySelectorAll('.check-lomba:checked');
+                let total = 0;
+
+                checkboxes.forEach(cb => {
+                    total += parseInt(cb.getAttribute('data-harga'));
+                });
+
+                if (checkboxes.length >= syaratBundling) {
+                    total = hargaBundling;
+                }
+
+                // Pastikan elemen totalHarga ada di DOM sebelum set value
+                let totalHargaEl = document.getElementById('totalHarga');
+                if (totalHargaEl) {
+                    totalHargaEl.value = 'Rp ' + total.toLocaleString();
+                }
+            }
         </script>
     @else
         <div class="py-12">

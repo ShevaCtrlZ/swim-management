@@ -23,6 +23,9 @@
                         <span class="material-icons mr-2">info</span> Info Klub
                     </a>
                     <a href="{{ route('add') }}" class="flex items-center p-2 text-gray-700 rounded hover:bg-gray-100">
+                        <span class="material-icons mr-2">person_add</span> Daftarkan Peserta
+                    </a>
+                    <a href="{{ route('peserta.index') }}" class="flex items-center p-2 text-gray-700 rounded hover:bg-gray-100">
                         <span class="material-icons mr-2">person_add</span> Tambah Peserta
                     </a>
                     <a href="{{ route('kompetisi.klub')}}" class="flex items-center p-2 text-gray-700 rounded hover:bg-gray-100">

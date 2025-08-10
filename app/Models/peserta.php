@@ -16,7 +16,7 @@ class peserta extends Model
         return $this->hasMany('App\Models\detail_lomba', 'peserta_id', 'id');
     }
 
-    
+
 
     public function klub()
     {
@@ -24,8 +24,8 @@ class peserta extends Model
     }
 
     public function lomba()
-{
-    return $this->belongsToMany(Lomba::class, 'detail_lomba', 'peserta_id', 'lomba_id')
-                ->withPivot('no_lintasan', 'urutan', 'catatan_waktu');
-}
+    {
+        return $this->belongsToMany(Lomba::class, 'detail_lomba', 'peserta_id', 'lomba_id')
+            ->withPivot('no_lintasan', 'urutan', 'catatan_waktu');
+    }
 }

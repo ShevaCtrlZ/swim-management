@@ -20,88 +20,40 @@ class AddController extends Controller
 
     public function storeData(Request $request)
     {
-        // dd($request->all());
-
-        // Validasi data awal
         $request->validate([
-            'nama_peserta' => 'required|string|max:255',
-            'jenis_kelamin' => 'required|in:L,P',
-            'tgl_lahir' => 'required|date',
-            'lomba_id' => 'required|array',
-            'lomba_id.*' => 'exists:lomba,id',
+            'peserta_id' => 'required|exists:peserta,id',
+            'lomba_id' => 'required|array|min:1',
             'limit_per_lomba' => 'required|array',
-            'limit_per_lomba.*' => ['required', 'regex:/^\d{2}:\d{2}:\d{2}$/'],
-        ], [
-
-            'limit_per_lomba.required' => 'Field limit wajib diisi.',
-            'limit_per_lomba.*.required' => 'Limit untuk setiap lomba wajib diisi.',
-            'limit_per_lomba.*.integer' => 'Limit harus berupa angka.',
-            'limit_per_lomba.*.min' => 'Limit minimal bernilai 1.',
         ]);
 
+        $peserta_id = $request->peserta_id;
+        $lombaDipilih = $request->lomba_id;
+        $limits = $request->input('limit_per_lomba', []);
 
-        $tahunLahir = date('Y', strtotime($request->tgl_lahir));
+        // Aturan harga
+        $hargaBundling = 120000;
+        $syaratBundling = 4;
 
-        // Validasi setiap lomba sesuai tahun lahir
-        foreach ($request->lomba_id as $lombaId) {
-            $lomba = Lomba::findOrFail($lombaId);
-            if ($tahunLahir < $lomba->tahun_lahir_minimal || $tahunLahir > $lomba->tahun_lahir_maksimal) {
-                return back()->with('error', "Tahun lahir peserta tidak sesuai dengan ketentuan lomba: {$lomba->jenis_gaya} - {$lomba->jarak}m");
-            }
-        }
+        // Hitung total harga reguler
+        $totalReguler = Lomba::whereIn('id', $lombaDipilih)->sum('harga');
 
-        // Ambil data user/klub
-        $user = Auth::user();
-        $asal_klub = $user->klub->nama_klub ?? 'Unknown';
-        $firstLombaId = $request->lomba_id[0];
-        // Simpan data peserta
-        $peserta = peserta::create([
-            'nama_peserta' => $request->nama_peserta,
-            'jenis_kelamin' => $request->jenis_kelamin,
-            'tgl_lahir' => $request->tgl_lahir,
-            'asal_klub' => $asal_klub,
-            'klub_id' => $user->klub_id,
-            'lomba_id' => $firstLombaId, // karena bisa banyak
-        ]);
+        // Tentukan harga yang dipakai
+        $totalHarga = (count($lombaDipilih) >= $syaratBundling) ? $hargaBundling : $totalReguler;
 
-        $totalHarga = 0;
-        foreach ($request->lomba_id as $lombaId) {
-            $limitValue = $request->limit_per_lomba[$lombaId] ?? null;
-
-            // if (!$limitValue || $limitValue === '99:99:99') {
-            //     return back()->with('error', "Limit untuk lomba ID $lombaId belum diisi atau default.");
-            // }
-
-            Detaillomba::create([
-                'peserta_id' => $peserta->id,
-                'lomba_id' => $lombaId,
-                'limit' => $limitValue,
-                'no_lintasan' => null,
-                'urutan' => null,
+        // Simpan ke detail_lomba
+        foreach ($lombaDipilih as $lomba_id) {
+            DetailLomba::create([
+                'lomba_id'    => $lomba_id,
+                'peserta_id'  => $peserta_id,
+                'no_lintasan' => null, // nanti diatur saat penyusunan nomor lintasan
+                'urutan'      => null,
                 'catatan_waktu' => null,
+                'keterangan'  => null,
+                'limit'       => $limits[$lomba_id] ?? '99:99:99', // default limit
             ]);
         }
-        foreach ($request->lomba_id as $lombaId) {
-            if (empty($request->limit_per_lomba[$lombaId])) {
-                return back()->with('error', "Limit untuk lomba ID $lombaId belum diisi.");
-            }
-        }
 
-        // Validasi khusus bundling
-        if ($request->metode === 'bundling') {
-            $totalHarga = 120000; // harga tetap
-            if (count($request->lomba_id) !== 4) {
-                return back()->withErrors(['Bundling harus memilih tepat 4 lomba.']);
-            }
-        }
-
-
-        // Tambahkan total harga ke kolom klub
-        $klub = $user->klub;
-        $klub->increment('total_harga', $totalHarga);
-
-
-        return redirect()->back()->with('success', 'Peserta dan detail lomba berhasil ditambahkan.');
+        return redirect()->back()->with('success', 'Pendaftaran berhasil. Total harga: Rp' . number_format($totalHarga, 0, ',', '.'));
     }
 
     public function list()
@@ -119,8 +71,13 @@ class AddController extends Controller
     public function create()
     {
         $kompetisi = Kompetisi::with('lomba')->get();
+        // Ambil klub yang sedang login
+        $user = Auth::user();
 
-        $allLombaData = $kompetisi->flatMap(function ($k) {
+        // Ambil semua peserta yang dimiliki klub ini
+        $peserta = Peserta::where('klub_id', $user->klub_id)->get();
+
+        $lomba = $kompetisi->flatMap(function ($k) {
             return $k->lomba->map(function ($l) use ($k) {
                 return [
                     'id' => $l->id,
@@ -135,9 +92,25 @@ class AddController extends Controller
             });
         })->values();
 
+        $lombaSudahDipilih = [];
 
-        return view('add', compact('kompetisi', 'allLombaData'));
+        // Aturan bundling
+        $hargaBundling = 120000; // contoh harga bundling
+        $syaratBundling = 4; // minimal ikut 3 lomba
+
+        return view('add', compact('kompetisi', 'lomba', 'peserta', 'hargaBundling', 'syaratBundling', 'lombaSudahDipilih'));
     }
+
+    // AddController.php
+    public function getLombaTerpilih($pesertaId)
+    {
+        $lombaSudahDipilih = DetailLomba::where('peserta_id', $pesertaId)
+            ->pluck('lomba_id')
+            ->toArray();
+
+        return response()->json($lombaSudahDipilih);
+    }
+
 
     public function edit($id)
     {
