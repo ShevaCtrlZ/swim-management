@@ -40,20 +40,6 @@
                     <form action="/store-data" method="post" class="p-6 space-y-6">
                         @csrf
                         <div class="mb-4">
-                            <label for="nama_peserta" class="block text-sm font-medium text-gray-700">Nama</label>
-                            <select name="peserta_id" id="peserta_id"
-                                class="form-control mt-1 p-3 block w-full shadow-md sm:text-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-lg"
-                                required>
-                                <option value="">-- Pilih Peserta --</option>
-                                @foreach ($peserta as $p)
-                                    <option value="{{ $p->id }}" data-tgl="{{ $p->tgl_lahir }}"
-                                        data-jk="{{ $p->jenis_kelamin }}">
-                                        {{ $p->nama_peserta }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="mb-4">
                             <label for="kompetisi" class="block text-sm font-medium text-gray-700">Kompetisi</label>
                             <select id="kompetisi"
                                 class="mt-1 p-3 block w-full shadow-md sm:text-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-lg">
@@ -68,6 +54,21 @@
                                 @endforeach
                             </select>
                         </div>
+                        <div class="mb-4">
+                            <label for="nama_peserta" class="block text-sm font-medium text-gray-700">Nama</label>
+                            <select name="peserta_id" id="peserta_id"
+                                class="form-control mt-1 p-3 block w-full shadow-md sm:text-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-lg"
+                                required>
+                                <option value="">-- Pilih Peserta --</option>
+                                @foreach ($peserta as $p)
+                                    <option value="{{ $p->id }}" data-tgl="{{ $p->tgl_lahir }}"
+                                        data-jk="{{ $p->jenis_kelamin }}">
+                                        {{ $p->nama_peserta }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
                         {{-- Tanggal Lahir (read-only) --}}
                         <div class="mb-4">
                             <label for="tgl_lahir" class="form-label">Tanggal Lahir</label>
@@ -174,13 +175,19 @@
             function renderLomba(tgl, jk) {
                 let tahunLahir = parseInt(tgl.split('-')[0]);
                 let html = '';
+                // Ambil kompetisi_id yang dipilih
+                let kompetisiSelect = document.getElementById('kompetisi');
+                let kompetisiId = kompetisiSelect ? kompetisiSelect.value : null;
 
                 allLomba.forEach(l => {
+                    // Filter kompetisi_id
+                    if (kompetisiId && l.kompetisi_id != kompetisiId) return;
                     // skip jika lomba sudah dipilih peserta
                     if (window.lombaSudahDipilih.includes(l.id)) return;
 
                     let syaratJK = (l.jk === 'L' || l.jk === 'P') ? (l.jk === jk) : true;
                     let syaratUmur = tahunLahir >= l.min && tahunLahir <= l.max;
+
 
                     if (syaratJK && syaratUmur) {
                         html += `
@@ -196,8 +203,7 @@
                     class="p-2 border rounded w-36"
                     title="Format harus HH:MM:SS, misal 01:30:00"
                 />
-            </div>
-        `;
+            </div>`;
                     }
                 });
 
