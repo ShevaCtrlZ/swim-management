@@ -180,4 +180,6 @@ Route::post('/kompetisi/{id}/sort-all-peserta', [KompetisiController::class, 'so
 Route::post('/lomba/{lomba_id}/seri/{seri}/center-max-limit', [KompetisiController::class, 'centerMaxLimitPeserta'])
     ->name('center_max_limit_peserta');
 
+Route::get('/kompetisi/{id}/juara-umum', [KompetisiController::class, 'hasilJuaraUmum'])->name('kompetisi.juara_umum');
+
 require __DIR__ . '/auth.php';

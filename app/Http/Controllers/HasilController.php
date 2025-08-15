@@ -60,7 +60,7 @@ class HasilController extends Controller
                     'peserta.tgl_lahir',
                     'peserta.jenis_kelamin',
                     'peserta.asal_klub',
-                    'peserta.limit',
+                    'detail_lomba.limit',
                 )
                 ->orderByRaw('ISNULL(detail_lomba.catatan_waktu), detail_lomba.catatan_waktu')
                 ->get();
@@ -92,7 +92,7 @@ public function lihat($id)
                     'peserta.tgl_lahir',
                     'peserta.jenis_kelamin',
                     'peserta.asal_klub',
-                    'peserta.limit',
+                    'detail_lomba.limit',
                 )
                 ->orderByRaw('ISNULL(detail_lomba.catatan_waktu), detail_lomba.catatan_waktu')
                 ->get();

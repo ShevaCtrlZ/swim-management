@@ -53,7 +53,7 @@
                                                     </td>
                                                     <td class="border border-gray-300 px-4 py-2">{{ $peserta->asal_klub }}
                                                     </td>
-                                                    <td class="border border-gray-300 px-4 py-2">{{ $peserta->limit }}</td>
+                                                    <td class="border border-gray-300 px-4 py-2">{{ $peserta->limit ?? '-' }}</td>
                                                     <td class="border border-gray-300 px-4 py-2">{{ $peserta->catatan_waktu ?? '-' }}</td>
                                                 </tr>
                                             @endforeach

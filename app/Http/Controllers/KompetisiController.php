@@ -521,4 +521,62 @@ class KompetisiController extends Controller
 
         return view('klub.lihat_kompetisi', compact('kompetisi', 'lomba'));
     }
+
+public function hasilJuaraUmum($kompetisi_id)
+{
+    $kompetisi = Kompetisi::findOrFail($kompetisi_id);
+    $lomba = Lomba::with(['detailLomba.peserta'])->where('kompetisi_id', $kompetisi_id)->get();
+
+    $rekap = [];
+    foreach ($lomba as $item) {
+        $grouped = $item->detailLomba->groupBy('seri');
+        foreach ($grouped as $seri => $details) {
+            // Exclude DQ/NS
+            $filtered = $details->filter(function($detail) {
+                return !in_array(strtoupper($detail->keterangan), ['DQ', 'NS']);
+            });
+            $sorted = $filtered->sort(function($a, $b) {
+                $waktuA = $a->catatan_waktu ? strtotime("1970-01-01 {$a->catatan_waktu} UTC") : PHP_INT_MAX;
+                $waktuB = $b->catatan_waktu ? strtotime("1970-01-01 {$b->catatan_waktu} UTC") : PHP_INT_MAX;
+                return $waktuA <=> $waktuB;
+            })->values();
+
+            foreach ($sorted->take(3) as $idx => $detail) {
+                $peserta = $detail->peserta;
+                if ($peserta) {
+                    $tahun = date('Y', strtotime($peserta->tgl_lahir));
+                    if (!isset($rekap[$tahun][$peserta->id])) {
+                        $rekap[$tahun][$peserta->id] = [
+                            'nama' => $peserta->nama_peserta,
+                            'asal_klub' => $peserta->asal_klub,
+                            'total_juara1' => 0,
+                            'total_juara2' => 0,
+                            'total_juara3' => 0,
+                            'total_lomba' => 0,
+                        ];
+                    }
+                    if ($idx == 0) $rekap[$tahun][$peserta->id]['total_juara1']++;
+                    if ($idx == 1) $rekap[$tahun][$peserta->id]['total_juara2']++;
+                    if ($idx == 2) $rekap[$tahun][$peserta->id]['total_juara3']++;
+                    $rekap[$tahun][$peserta->id]['total_lomba']++;
+                }
+            }
+        }
+    }
+
+    // Urutkan juara umum tiap tahun berdasarkan total medali
+    foreach ($rekap as $tahun => &$pesertas) {
+        uasort($pesertas, function($a, $b) {
+            if ($a['total_juara1'] != $b['total_juara1']) {
+                return $b['total_juara1'] - $a['total_juara1'];
+            }
+            if ($a['total_juara2'] != $b['total_juara2']) {
+                return $b['total_juara2'] - $a['total_juara2'];
+            }
+            return $b['total_juara3'] - $a['total_juara3'];
+        });
+    }
+
+    return view('hasil_juara_umum', compact('kompetisi', 'rekap'));
+}
 }
