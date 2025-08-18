@@ -10,12 +10,12 @@ return new class extends Migration
     {
         Schema::create('peserta', function (Blueprint $table) {
             $table->id();
+            // $table->foreignId('klub_id')->nullable()->constrained('klub')->onDelete('cascade'); // Foreign key ke tabel klub
             $table->string('nama_peserta');
             $table->enum('jenis_kelamin', ['L', 'P']);
             $table->date('tgl_lahir');
             $table->string('asal_klub');
-            $table->string('limit');
-            $table->foreignId('lomba_id')->constrained('lomba')->onDelete('cascade');
+            $table->foreignId('lomba_id')->nullable()->constrained('lomba')->onDelete('cascade');
             $table->timestamps();
         });
     }

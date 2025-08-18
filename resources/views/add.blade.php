@@ -46,14 +46,18 @@
                                 <option value="">Pilih Kompetisi</option>
                                 @foreach ($kompetisi as $k)
                                     @php
-                                        $isToday = \Carbon\Carbon::parse($k->tgl_mulai)->isToday();
+                                        // Hari ini >= tgl_mulai → disable
+                                        $isDisabled = \Carbon\Carbon::today()->greaterThanOrEqualTo(
+                                            \Carbon\Carbon::parse($k->tgl_mulai),
+                                        );
                                     @endphp
-                                    <option value="{{ $k->id }}" {{ $isToday ? 'disabled' : '' }}>
-                                        {{ $k->nama_kompetisi }} {{ $isToday ? '(Tidak bisa didaftar)' : '' }}
+                                    <option value="{{ $k->id }}" {{ $isDisabled ? 'disabled' : '' }}>
+                                        {{ $k->nama_kompetisi }} {{ $isDisabled ? '(Tidak bisa didaftar)' : '' }}
                                     </option>
                                 @endforeach
                             </select>
                         </div>
+                        
                         <div class="mb-4">
                             <label for="nama_peserta" class="block text-sm font-medium text-gray-700">Nama</label>
                             <select name="peserta_id" id="peserta_id"

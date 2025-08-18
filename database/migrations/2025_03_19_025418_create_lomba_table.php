@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('tahun_lahir_minimal');
             $table->string('tahun_lahir_maksimal');
             $table->string('jk');
+            $table->decimal('harga', 10, 2);
             $table->timestamps();
         });
     }
