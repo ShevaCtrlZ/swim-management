@@ -8,7 +8,7 @@ class Kompetisi extends Model
 {
     protected $table = 'kompetisi';
     protected $primaryKey = 'id';   
-    protected $fillable = ['nama_kompetisi', 'tgl_mulai', 'tgl_selesai', 'lokasi'];
+    protected $fillable = ['nama_kompetisi', 'tgl_mulai', 'tgl_selesai', 'lokasi', 'harga_bundling', 'syarat_bundling'];
     public $timestamps = false;
 
     public function lomba()

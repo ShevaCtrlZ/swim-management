@@ -49,6 +49,22 @@
                     class="mt-1 p-3 block w-full shadow-sm sm:text-sm focus:ring-blue-500 focus:border-blue-500 border border-gray-300 rounded-lg"
                     required>
             </div>
+            <div class="mb-4">
+                <label for="harga_bundling" class="block text-sm font-medium text-gray-700">
+                    Harga Bundling (Opsional)
+                </label>
+                <input type="number" name="harga_bundling" id="harga_bundling" placeholder="Masukkan harga bundling"
+                    class="mt-1 p-3 block w-full shadow-sm sm:text-sm focus:ring-blue-500 focus:border-blue-500 border border-gray-300 rounded-lg"
+                    min="0">
+            </div>
+            <div class="mb-4">
+                <label for="syarat_bundling" class="block text-sm font-medium text-gray-700">
+                    Syarat Bundling (Opsional)
+                </label>
+                <input type="number" name="syarat_bundling" id="syarat_bundling" placeholder="Masukkan syarat bundling"
+                    class="mt-1 p-3 block w-full shadow-sm sm:text-sm focus:ring-blue-500 focus:border-blue-500 border border-gray-300 rounded-lg"
+                    min="1">
+            </div>
 
             <div class="text-center">
                 <button type="submit"

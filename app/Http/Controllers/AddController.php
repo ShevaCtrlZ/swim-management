@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use App\Models\peserta;
 use App\Models\Lomba;
 use App\Models\Detaillomba;
+use App\Models\Klub;
 
 class AddController extends Controller
 {
@@ -24,37 +25,75 @@ class AddController extends Controller
             'peserta_id' => 'required|exists:peserta,id',
             'lomba_id' => 'required|array|min:1',
             'limit_per_lomba' => 'required|array',
+            'metode' => 'required|in:normal,bundling',
         ]);
 
         $peserta_id = $request->peserta_id;
         $lombaDipilih = $request->lomba_id;
         $limits = $request->input('limit_per_lomba', []);
 
-        // Aturan harga
-        $hargaBundling = 120000;
-        $syaratBundling = 4;
+        // Ambil kompetisi_id dari salah satu lomba (anggap semua lomba dalam satu kompetisi)
+        $kompetisiId = Lomba::whereIn('id', $lombaDipilih)->value('kompetisi_id');
+        $kompetisi = Kompetisi::find($kompetisiId);
 
-        // Hitung total harga reguler
-        $totalReguler = Lomba::whereIn('id', $lombaDipilih)->sum('harga');
+        $hargaBundling   = $kompetisi->harga_bundling ?? 0;
+        $syaratBundling  = $kompetisi->syarat_bundling ?? 9999;
 
-        // Tentukan harga yang dipakai
-        $totalHarga = (count($lombaDipilih) >= $syaratBundling) ? $hargaBundling : $totalReguler;
+        $lombaList = Lomba::whereIn('id', $lombaDipilih)->get();
 
-        // Simpan ke detail_lomba
-        foreach ($lombaDipilih as $lomba_id) {
+        // --- Hitung total harga ---
+        $totalHarga = 0;
+        if ($request->metode === 'bundling') {
+            if ($lombaList->count() < $syaratBundling) {
+                return redirect()->back()->with('error', "Bundling minimal harus {$syaratBundling} lomba");
+            }
+
+            // harga bundling
+            $totalHarga = $hargaBundling;
+
+            // kalau lebih dari syarat bundling, hitung sisanya harga normal
+            if ($lombaList->count() > $syaratBundling) {
+                $sisaLomba = $lombaList->skip($syaratBundling);
+                foreach ($sisaLomba as $lomba) {
+                    $totalHarga += $lomba->harga;
+                }
+            }
+        } else {
+            // normal → jumlahkan harga masing-masing lomba
+            foreach ($lombaList as $lomba) {
+                $totalHarga += $lomba->harga;
+            }
+        }
+
+        // --- Simpan detail lomba ---
+        foreach ($lombaList as $lomba) {
             DetailLomba::create([
-                'lomba_id'    => $lomba_id,
+                'lomba_id'    => $lomba->id,
                 'peserta_id'  => $peserta_id,
-                'no_lintasan' => null, // nanti diatur saat penyusunan nomor lintasan
+                'no_lintasan' => null,
                 'urutan'      => null,
                 'catatan_waktu' => null,
                 'keterangan'  => null,
-                'limit'       => $limits[$lomba_id] ?? '99:99:99', // default limit
+                'limit'       => $limits[$lomba->id] ?? '99:99:99',
             ]);
         }
 
+        // --- Update total_harga ke klub ---
+        $peserta = Peserta::findOrFail($peserta_id);
+
+        if ($peserta->klub_id) {
+            $klub = Klub::find($peserta->klub_id);
+            if ($klub) {
+                $klub->increment('total_harga', $totalHarga);
+                // kalau mau overwrite, bisa pakai:
+                // $klub->update(['total_harga' => $totalHarga]);
+            }
+        }
         return redirect()->back()->with('success', 'Pendaftaran berhasil. Total harga: Rp' . number_format($totalHarga, 0, ',', '.'));
     }
+
+
+
 
     public function list()
     {
@@ -71,10 +110,7 @@ class AddController extends Controller
     public function create()
     {
         $kompetisi = Kompetisi::with('lomba')->get();
-        // Ambil klub yang sedang login
         $user = Auth::user();
-
-        // Ambil semua peserta yang dimiliki klub ini
         $peserta = Peserta::where('klub_id', $user->klub_id)->get();
 
         $lomba = $kompetisi->flatMap(function ($k) {
@@ -86,7 +122,7 @@ class AddController extends Controller
                     'jarak' => $l->jarak,
                     'min' => (int) $l->tahun_lahir_minimal,
                     'max' => (int) $l->tahun_lahir_maksimal,
-                    'jk' => strtoupper(substr($l->jk, 0, 1)), // convert 'Laki-laki' jadi 'L', 'Perempuan' jadi 'P'
+                    'jk' => strtoupper(substr($l->jk, 0, 1)),
                     'harga' => $l->harga ?? 0
                 ];
             });
@@ -94,12 +130,13 @@ class AddController extends Controller
 
         $lombaSudahDipilih = [];
 
-        // Aturan bundling
-        $hargaBundling = 120000; // contoh harga bundling
-        $syaratBundling = 4; // minimal ikut 3 lomba
+        // contoh: ambil bundling default dari kompetisi pertama
+        $hargaBundling = $kompetisi->first()->harga_bundling ?? 0;
+        $syaratBundling = $kompetisi->first()->syarat_bundling ?? 9999;
 
         return view('add', compact('kompetisi', 'lomba', 'peserta', 'hargaBundling', 'syaratBundling', 'lombaSudahDipilih'));
     }
+
 
     // AddController.php
     public function getLombaTerpilih($pesertaId)

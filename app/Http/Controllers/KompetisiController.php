@@ -36,6 +36,8 @@ class KompetisiController extends Controller
             'tgl_mulai' => 'required|date',
             'tgl_selesai' => 'required|date|after_or_equal:tgl_mulai',
             'lokasi' => 'required',
+            'harga_bundling' => 'nullable|numeric|min:0',
+            'syarat_bundling' => 'nullable|integer|min:1',
         ]);
 
         // Store data in the kompetisi model
@@ -44,6 +46,8 @@ class KompetisiController extends Controller
             'tgl_mulai' => $request->tgl_mulai,
             'tgl_selesai' => $request->tgl_selesai,
             'lokasi' => $request->lokasi,
+            'harga_bundling' => $request->harga_bundling,
+            'syarat_bundling' => $request->syarat_bundling,
         ]);
 
         // Redirect to the add view
@@ -58,6 +62,8 @@ class KompetisiController extends Controller
             'tgl_mulai' => $request->tgl_mulai,
             'tgl_selesai' => $request->tgl_selesai,
             'lokasi' => $request->lokasi,
+            'harga_bundling' => $request->harga_bundling,
+            'syarat_bundling' => $request->syarat_bundling,
         ]);
 
         return redirect()->route('list_kompetisi')->with('success', 'Data successfully added.');

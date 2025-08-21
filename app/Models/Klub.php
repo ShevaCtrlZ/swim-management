@@ -15,6 +15,7 @@ class Klub extends Model
         'nama_klub',
         'alamat',
         'kontak',
+        'total_harga',
     ];
 
     protected static function boot()

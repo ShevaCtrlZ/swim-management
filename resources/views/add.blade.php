@@ -41,7 +41,7 @@
                         @csrf
                         <div class="mb-4">
                             <label for="kompetisi" class="block text-sm font-medium text-gray-700">Kompetisi</label>
-                            <select id="kompetisi"
+                            <select id="kompetisi" name="kompetisi_id"
                                 class="mt-1 p-3 block w-full shadow-md sm:text-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-lg">
                                 <option value="">Pilih Kompetisi</option>
                                 @foreach ($kompetisi as $k)
@@ -57,7 +57,7 @@
                                 @endforeach
                             </select>
                         </div>
-                        
+
                         <div class="mb-4">
                             <label for="nama_peserta" class="block text-sm font-medium text-gray-700">Nama</label>
                             <select name="peserta_id" id="peserta_id"
@@ -91,13 +91,16 @@
                             <label for="metode" class="block text-sm font-medium text-gray-700">Metode Pendaftaran</label>
                             <select name="metode" id="metode"
                                 class="mt-1 p-3 block w-full shadow-md sm:text-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 rounded-lg">
-                                <option value="reguler">Reguler</option>
+                                <option value="normal">Reguler</option>
                                 <option value="bundling">Bundling</option>
                             </select>
                         </div>
 
                         <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-700">Lomba</label>
+                            <div class="flex items-center place-content-between space-x-4 mb-2">
+                                <label class="block text-sm font-medium text-gray-700">Lomba</label>
+                                <label class="block text-sm font-medium text-gray-700">Limit</label>
+                            </div>
                             <div id="listLomba" class="space-y-2 mt-2">
                                 <p class="text-gray-500 text-sm italic">Silakan pilih kompetisi, jenis kelamin, dan tanggal
                                     lahir terlebih dahulu.</p>
@@ -195,7 +198,7 @@
 
                     if (syaratJK && syaratUmur) {
                         html += `
-            <div class="flex items-center space-x-4 mb-2">
+            <div class="flex items-center place-content-between space-x-4 mb-2">
                 <label class="flex items-center space-x-2">
                     <input type="checkbox" name="lomba_id[]" value="${l.id}" class="check-lomba" data-harga="${l.harga}">
                     <span>${l.jenis_gaya} ${l.jarak}m (Rp ${parseInt(l.harga).toLocaleString()})</span>
@@ -232,11 +235,36 @@
                     total += parseInt(cb.getAttribute('data-harga'));
                 });
 
-                if (checkboxes.length >= syaratBundling) {
-                    total = hargaBundling;
+                if (document.getElementById('metode').value === 'bundling') {
+                    if (checkboxes.length >= syaratBundling) {
+                        // Harga bundling dulu
+                        total = hargaBundling;
+
+                        // Tambah harga untuk lomba lebih dari syarat bundling
+                        if (checkboxes.length > syaratBundling) {
+                            let hargaTambahan = 0;
+                            checkboxes.forEach((cb, idx) => {
+                                if (idx >= syaratBundling) {
+                                    hargaTambahan += parseInt(cb.getAttribute('data-harga'));
+                                }
+                            });
+                            total += hargaTambahan;
+                        }
+                    } else {
+                        // kalau belum memenuhi syarat bundling, hitung normal
+                        total = 0;
+                        checkboxes.forEach(cb => {
+                            total += parseInt(cb.getAttribute('data-harga'));
+                        });
+                    }
+                } else {
+                    // metode reguler → hitung normal
+                    total = 0;
+                    checkboxes.forEach(cb => {
+                        total += parseInt(cb.getAttribute('data-harga'));
+                    });
                 }
 
-                // Pastikan elemen totalHarga ada di DOM sebelum set value
                 let totalHargaEl = document.getElementById('totalHarga');
                 if (totalHargaEl) {
                     totalHargaEl.value = 'Rp ' + total.toLocaleString();
