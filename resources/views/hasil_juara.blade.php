@@ -19,6 +19,10 @@
             class="inline-block px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
             Export PDF
         </a>
+        <a href="{{ route('kompetisi.juara_umum', $kompetisi->id) }}"
+            class="inline-block px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 mb-4">
+            <i class="fas fa-trophy mr-2"></i> Lihat Juara Umum
+        </a>
 
         @if (session('error'))
             <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mt-4" role="alert">
