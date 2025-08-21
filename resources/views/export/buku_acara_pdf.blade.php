@@ -150,9 +150,9 @@
                                 <td>{{ $detail->peserta->tgl_lahir ?? '-' }}</td>
                                 <td>{{ $detail->peserta->asal_klub ?? '-' }}</td>
                                 <td>{{ $detail->limit ?? '-' }}</td>
-                                <td>{{ $detail->catatan_waktu ?? '-' }}</td>
+                                <td>{{ $detail->catatan_waktu ?? ' ' }}</td>
                                 <td>
-                                    {{ $detail->keterangan ?? '-' }}
+                                    {{ $detail->keterangan ?? ' ' }}
                                 </td>
                             </tr>
                         @empty
