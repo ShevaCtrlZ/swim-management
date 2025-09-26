@@ -82,9 +82,10 @@
                 <div>
                     <h3 class="text-lg font-bold mb-4">Kontak</h3>
                     <ul class="text-sm text-gray-400">
-                        <li>Email: info@manajemenrenang.com</li>
-                        <li>Telepon: +62 812-3456-7890</li>
-                        <li>Alamat: Jl. Renang No. 123, Jakarta</li>
+                        <li><a>Email: info@manajemenrenang.com</a></li>
+                        <li><a href="https://wa.me/qr/5TKOFFPYVICUE1">Telepon: +62 813-3222-5675</a></li>
+                        <li><a href="https://wa.me/qr/YUDEIJXUPLDPO1">Telepon: +62 895-2202-0003</a></li>
+                        <li>Alamat: Duduhan, Mentoro, Pacitan. </li>
                     </ul>
                 </div>
             </div>
