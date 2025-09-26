@@ -93,6 +93,27 @@
         </div>
     </footer>
 
+    <!-- WhatsApp Live Chat Floating Button with 2 Options (list di atas, tombol bulat) -->
+    <div id="wa-fab" class="fixed z-50 bottom-6 right-6 flex flex-col items-end">
+        <!-- Options (list di atas tombol) -->
+        <div id="wa-options" class="hidden flex-col mb-2 space-y-2 items-end">
+            <a href="https://wa.me/6281332225675" target="_blank"
+               class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-full shadow flex items-center space-x-2">
+                <i class="fab fa-whatsapp"></i>
+                <span>+62 813-3222-5675</span>
+            </a>
+            <a href="https://wa.me/6289522020003" target="_blank"
+               class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-full shadow flex items-center space-x-2">
+                <i class="fab fa-whatsapp"></i>
+                <span>+62 895-2202-0003</span>
+            </a>
+        </div>
+        <!-- Main Button (bulat) -->
+        <button onclick="toggleWaOptions()" class="bg-green-500 hover:bg-green-600 rounded-full shadow-lg p-4 flex items-center justify-center transition-colors focus:outline-none">
+            <i class="fab fa-whatsapp text-white text-3xl"></i>
+        </button>
+    </div>
+
     <!-- Script -->
     <script>
         document.getElementById('hamburgerButton').addEventListener('click', () => {
@@ -111,6 +132,23 @@
                 dropdown.classList.add('hidden');
             }
         });
+
+        function toggleWaOptions() {
+            const options = document.getElementById('wa-options');
+            options.classList.toggle('hidden');
+            // Optional: close when click outside
+            if (!options.classList.contains('hidden')) {
+                document.addEventListener('click', closeWaOptions);
+            }
+        }
+        function closeWaOptions(e) {
+            const fab = document.getElementById('wa-fab');
+            const options = document.getElementById('wa-options');
+            if (!fab.contains(e.target)) {
+                options.classList.add('hidden');
+                document.removeEventListener('click', closeWaOptions);
+            }
+        }
     </script>
 </body>
 
