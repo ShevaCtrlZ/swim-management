@@ -359,28 +359,98 @@ class KompetisiController extends Controller
                 continue;
             }
 
-            $jumlahSeri = ceil($totalPeserta / $jumlahLintasan);
+            // NEW: isi seri penuh di bagian bawah sebanyak mungkin,
+            // sisanya ditempatkan di seri atas. Usahakan setiap seri atas minimal 2 peserta dengan meminjam dari bawah bila perlu.
+            $jumlahSeri = (int) ceil($totalPeserta / $jumlahLintasan);
+            $fullBottomCount = intdiv($totalPeserta, $jumlahLintasan); // berapa seri penuh (nilai = jumlahLintasan)
+            if ($fullBottomCount > $jumlahSeri) $fullBottomCount = $jumlahSeri;
+            $remainder = $totalPeserta - ($fullBottomCount * $jumlahLintasan);
 
-            // Distribusi awal (dari belakang agar seri akhir lebih banyak)
+            // inisialisasi semua seri 0
             $seriDistribusi = array_fill(0, $jumlahSeri, 0);
-            $sisaPeserta = $totalPeserta;
-            $currentSeri = $jumlahSeri - 1;
 
-            while ($sisaPeserta > 0) {
-                $toAdd = min($jumlahLintasan, $sisaPeserta);
-                $seriDistribusi[$currentSeri] = $toAdd;
-                $sisaPeserta -= $toAdd;
-                $currentSeri--;
+            // isi seri penuh di bagian bawah (last indices)
+            for ($i = 0; $i < $fullBottomCount; $i++) {
+                $seriDistribusi[$jumlahSeri - 1 - $i] = $jumlahLintasan;
             }
 
-            // Gabungkan seri dengan peserta < 2 ke seri setelahnya
-            for ($i = 0; $i < count($seriDistribusi); $i++) {
-                if ($seriDistribusi[$i] > 0 && $seriDistribusi[$i] < 2) {
-                    if (isset($seriDistribusi[$i + 1])) {
-                        $seriDistribusi[$i + 1] += $seriDistribusi[$i];
-                        $seriDistribusi[$i] = 0;
+            $slots = $jumlahSeri - $fullBottomCount; // seri yang belum terisi (di atas)
+
+            if ($slots > 0) {
+                // Usahakan minimal 2 per seri atas jika memungkinkan
+                $minPerSlot = 2;
+                $required = $minPerSlot * $slots;
+
+                // Jika remainder kurang dari required, coba "pinjam" dari seri penuh di bagian bawah
+                $borrowIndex = $jumlahSeri - $fullBottomCount; // index pertama dari seri penuh (jika ada)
+                while ($remainder < $required && $borrowIndex < $jumlahSeri) {
+                    // cari dari bawah (last full series index)
+                    $lastFullIdx = $jumlahSeri - 1;
+                    // temukan seri dari bawah yang > minPerSlot (bisa dipinjam)
+                    while ($lastFullIdx >= 0 && $seriDistribusi[$lastFullIdx] <= 0) $lastFullIdx--;
+                    if ($lastFullIdx < 0) break;
+
+                    if ($seriDistribusi[$lastFullIdx] - 1 >= 1) {
+                        // pinjam 1 dari seri tersebut
+                        $seriDistribusi[$lastFullIdx] -= 1;
+                        $remainder += 1;
+                        // jika seri yang dipinjam turun di bawah jumlahLintasan, itu bukan masalah
                     } else {
-                        continue 2;
+                        // tidak bisa pinjam lagi
+                        break;
+                    }
+
+                    // hentikan jika sudah cukup untuk memenuhi required
+                    if ($remainder >= $required) break;
+
+                    // cari lagi jika perlu
+                    $lastFullIdx--;
+                }
+
+                // Setelah upaya pinjam, jika masih kurang, kita tetap lanjutkan dengan apa yang ada.
+
+                // Sekarang alokasikan minimal ke tiap slot
+                $basePerSlot = intdiv($remainder, $slots);
+                $extra = $remainder % $slots;
+
+                // Jika basePerSlot < minPerSlot, alokasikan minPerSlot dulu bila memungkinkan
+                if ($basePerSlot < $minPerSlot) {
+                    // Coba set setiap slot minimal minPerSlot jika total memungkinkan
+                    $alloc = min($remainder, $required);
+                    // isi setiap slot dengan 1 atau 2 sesuai alokasi
+                    for ($s = 0; $s < $slots; $s++) {
+                        $give = min($minPerSlot, $alloc);
+                        $seriDistribusi[$s] = $give;
+                        $alloc -= $give;
+                    }
+                    // jika masih sisa alokasi, sebar sisa ke slot dari kiri ke kanan
+                    for ($s = 0; $s < $slots && $alloc > 0; $s++) {
+                        $seriDistribusi[$s]++;
+                        $alloc--;
+                    }
+                } else {
+                    // Alokasi rata + distribusi extra (dari kiri ke kanan)
+                    for ($s = 0; $s < $slots; $s++) {
+                        $seriDistribusi[$s] = $basePerSlot + ($extra > 0 ? 1 : 0);
+                        if ($extra > 0) $extra--;
+                    }
+                }
+            } else {
+                // semua seri diisi penuh, nothing to do
+            }
+
+            // Pastikan jumlah total cocok (safety)
+            $sumDistribusi = array_sum($seriDistribusi);
+            if ($sumDistribusi !== $totalPeserta) {
+                // koreksi jika ada perbedaan karena pembulatan: tambahkan/kurangi di seri atas pertama yang ada
+                $diff = $totalPeserta - $sumDistribusi;
+                for ($i = 0; $i < $jumlahSeri && $diff !== 0; $i++) {
+                    if ($diff > 0) {
+                        $seriDistribusi[$i]++;
+                        $diff--;
+                    } elseif ($diff < 0 && $seriDistribusi[$i] > 0) {
+                        $seriDistribusi[$i]--;
+                        $diff++;
                     }
                 }
             }
@@ -388,10 +458,13 @@ class KompetisiController extends Controller
             // Reset seri lokal (agar selalu dimulai dari 1)
             $localSeriNumber = 1;
 
-            // Bagi peserta sesuai distribusi
+            // Bagi peserta sesuai distribusi (seriDistribusi[0] => seri 1 (atas), ..., last => bawah)
             $index = 0;
             foreach ($seriDistribusi as $jumlahPeserta) {
-                if ($jumlahPeserta === 0) continue;
+                if ($jumlahPeserta === 0) {
+                    $localSeriNumber++;
+                    continue;
+                }
 
                 $pesertaSeri = $peserta->slice($index, $jumlahPeserta);
                 $index += $jumlahPeserta;
@@ -413,9 +486,6 @@ class KompetisiController extends Controller
         return redirect()->route('lihat_kompetisi', ['id' => $id])
             ->with('success', 'Peserta berhasil dibagi ke dalam seri. Seri awal berisi peserta paling lambat dan jumlah lebih sedikit.');
     }
-
-
-
 
 
     public function centerMaxLimitPeserta(Request $request, $lomba_id, $seri)
