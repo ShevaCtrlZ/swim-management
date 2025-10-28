@@ -52,8 +52,8 @@
         <div class="mb-6">
             <label for="jk" class="block font-semibold text-sm text-gray-700 mb-1">Jenis Kelamin</label>
             <select name="jk" id="jk" class="w-full border-gray-300 rounded-md shadow-sm">
-                <option value="Laki-laki" {{ $lomba->jk == 'Laki-laki' ? 'selected' : '' }}>Laki-laki</option>
-                <option value="Perempuan" {{ $lomba->jk == 'Perempuan' ? 'selected' : '' }}>Perempuan</option>
+                <option value="L" {{ $lomba->jk == 'Laki-laki' ? 'selected' : '' }}>Laki-laki</option>
+                <option value="P" {{ $lomba->jk == 'Perempuan' ? 'selected' : '' }}>Perempuan</option>
             </select>
         </div>
 

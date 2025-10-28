@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Kompetisi;
 use App\Models\Lomba;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\View\View;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -585,17 +586,13 @@ class KompetisiController extends Controller
 
     public function klubPesertaKompetisi($id)
     {
-        $klub = Auth::user()->klub;
-
-        // Ambil data kompetisi
         $kompetisi = Kompetisi::findOrFail($id);
+        $lomba = Lomba::with('peserta')->where('kompetisi_id', $id)->get();
 
-        // Ambil semua lomba pada kompetisi ini beserta peserta dari klub ini saja
-        $lomba = \App\Models\Lomba::with(['peserta' => function ($q) use ($klub) {
-            $q->where('klub_id', $klub->id);
-        }])->where('kompetisi_id', $id)->get();
+        // ambil nama klub dari user yang login (sesuaikan sumber jika berbeda)
+        $namaKlub = Auth::check() ? (Auth::user()->asal_klub ?? '') : '';
 
-        return view('klub.lihat_kompetisi', compact('kompetisi', 'lomba'));
+        return view('klub.lihat_kompetisi', compact('kompetisi', 'lomba', 'namaKlub'));
     }
 
 public function hasilJuaraUmum($kompetisi_id)
@@ -655,4 +652,33 @@ public function hasilJuaraUmum($kompetisi_id)
 
     return view('hasil_juara_umum', compact('kompetisi', 'rekap'));
 }
+public function exportPesertaKlub($kompetisi_id, $klub){
+    $kompetisi = Kompetisi::findOrFail($kompetisi_id);
+
+    // ambil peserta untuk klub (cocokkan string asal_klub)
+    $pesertas = DB::table('detail_lomba')
+        ->join('peserta','detail_lomba.peserta_id','peserta.id')
+        ->join('lomba','detail_lomba.lomba_id','lomba.id')
+        ->where('lomba.kompetisi_id', $kompetisi_id)
+        ->where('peserta.asal_klub', urldecode($klub))
+        ->select(
+            'peserta.id as peserta_id',
+            'peserta.nama_peserta',
+            'peserta.tgl_lahir',
+            'peserta.jenis_kelamin',
+            'peserta.asal_klub',
+            'detail_lomba.no_lintasan',
+            'detail_lomba.catatan_waktu',
+            'detail_lomba.limit',
+            'lomba.nomor_lomba',
+            'lomba.jarak',
+            'lomba.jenis_gaya'
+        )
+        ->orderBy('lomba.nomor_lomba')
+        ->orderBy('detail_lomba.no_lintasan')
+        ->get();
+
+        $pdf = Pdf::loadView('klub.peserta_pdf', compact('kompetisi','pesertas','klub'));
+        return $pdf->download('peserta_'.$kompetisi->id.'_'.preg_replace('/[^A-Za-z0-9]/','_',urldecode($klub)).'.pdf');
+        }
 }

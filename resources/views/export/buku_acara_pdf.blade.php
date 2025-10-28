@@ -88,24 +88,18 @@
 </head>
 
 <body>
-    <div style="position: relative; width:100%; min-height:70px; margin-bottom:8px;">
-        <img src="{{ public_path('gambar/logo.png') }}" alt="GSC"
-            style="height:70px; position:absolute; left:0; top:0;">
-        <img src="{{ public_path('gambar/logo1.png') }}" alt="Akuatik Indonesia"
-            style="height:70px; position:absolute; right:0; top:0;">
-    </div>
-    <div style="text-align:center; margin-bottom:16px;">
-        <strong>BUKU ACARA<br>
-            HAORNAS CUP SWIMMING 2025<br>
-            SE PACITAN<br>
-            PACITAN, 14 SEPTEMBER 2025</strong>
-    </div>
-    <h2>{{ $kompetisi->nama_kompetisi }}</h2>
-    <p><strong>Tanggal Mulai:</strong> {{ $kompetisi->tgl_mulai }}</p>
-    <p><strong>Tanggal Selesai:</strong> {{ $kompetisi->tgl_selesai }}</p>
-    <p><strong>Lokasi:</strong> {{ $kompetisi->lokasi }}</p>
+    <div class="header">
+        <div class="logos">
+            <img src="{{ public_path('gambar/logo jaguar.png') }}" alt="logo1">
+            <img src="{{ public_path('gambar/logo.png') }}" alt="logo2">
+            <img src="{{ public_path('gambar/Logo Conie.png') }}" alt="logo3">
+        </div>
 
-    @if (session('error'))
+        <div class="title">{{ strtoupper($kompetisi->nama_kompetisi ?? '-') }}</div>
+        <div class="subtitle">{{ $kompetisi->lokasi ?? '' }} &nbsp; | &nbsp; {{ $kompetisi->tgl_mulai ?? '' }} @if($kompetisi->tgl_selesai) - {{ $kompetisi->tgl_selesai }} @endif</div>
+        <div class="small">Dicetak: {{ now()->format('d M Y H:i') }}</div>
+    </div>
+        @if (session('error'))
         <div class="error">
             <strong>Error!</strong> {{ session('error') }}
         </div>
@@ -120,7 +114,7 @@
     @foreach ($lomba as $item)
         <div style="margin-bottom: 24px;">
             <h4>
-                {{ $item->jarak }} M GAYA {{ strtoupper($item->jenis_gaya) }} KU
+                {{ $item->nomor_lomba }}. {{ $item->jarak }} M GAYA {{ strtoupper($item->jenis_gaya) }} KU
                 {{ $item->tahun_lahir_minimal }} / {{ $item->tahun_lahir_maksimal }} {{ $item->jk }}
             </h4>
             @php

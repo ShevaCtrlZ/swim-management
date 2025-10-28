@@ -6,22 +6,12 @@
     <div class="bg-white p-6 rounded-lg shadow-md">
         <h2 class="text-2xl font-bold mb-4">Peserta Klub pada Kompetisi: {{ $kompetisi->nama_kompetisi ?? '-' }}</h2>
 
-        {{-- Daftar Nama Lomba yang Diikuti --}}
-        @php
-            $lombaDiikuti = collect($lomba)->filter(function ($l) {
-                return isset($l->peserta) && count($l->peserta) > 0;
-            });
-        @endphp
-        @if ($lombaDiikuti->count())
-            <div class="mb-4">
-                <span class="font-semibold">Lomba yang diikuti klub Anda:</span>
-                <ul class="list-disc list-inside text-blue-700">
-                    @foreach ($lombaDiikuti as $l)
-                        <li>{{ $l->nama_lomba ?? '-' }}</li>
-                    @endforeach
-                </ul>
-            </div>
-        @endif
+
+        <a href="{{ route('export.starting_list_pdf', ['kompetisi' => $kompetisi->id]) }}"
+           target="_blank"
+           class="inline-block px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 mb-4">
+           Export Daftar Peserta (PDF)
+        </a>
 
         @if (isset($lomba) && count($lomba))
             @foreach ($lomba as $l)

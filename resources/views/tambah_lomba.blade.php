@@ -38,6 +38,7 @@
                                 <option value="Dada">Dada</option>
                                 <option value="Kupu">Kupu</option>
                                 <option value="Punggung">Punggung</option>
+                                <option value="Papan">Papan</option>
                             </select>
                         </div>
                         <div class="mb-4">

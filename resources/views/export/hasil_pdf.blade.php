@@ -8,6 +8,8 @@
         body {
             font-family: DejaVu Sans, sans-serif;
             font-size: 12px;
+            text-align: center;
+            /* center semua teks secara default */
         }
 
         table {
@@ -18,20 +20,22 @@
 
         th,
         td {
-            /* border: 1px solid #222; */
             /* Hapus border pada td */
             padding: 6px 8px;
+            text-align: center;
+            /* teks di tabel di-tengah */
         }
 
         th {
             background: #f3f3f3;
             border: 1px solid #222;
-            /* Tambahkan border hanya pada th jika ingin garis di header saja */
         }
 
         h2,
         h4 {
             margin: 8px 0;
+            text-align: center;
+            /* pastikan heading di tengah */
         }
 
         .ttd-section {
@@ -47,7 +51,6 @@
 
         .ttd .name {
             margin-top: 80px;
-            /* space for signature */
             font-weight: bold;
             text-decoration: underline;
         }
@@ -55,26 +58,40 @@
         .ttd .role {
             margin-top: 4px;
         }
+
+        /* centered logos using flex (prevent overlap) */
+        .header-logos {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+            page-break-inside: avoid;
+        }
+
+        .header-logos img {
+            max-height: 60px;
+            /* batasi tinggi agar tidak terpotong */
+            max-width: 30%;
+            /* batasi lebar agar berjajar rapi */
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            display: inline-block;
+        }
     </style>
 </head>
 
 <body>
-    <div style="position: relative; width:100%; min-height:70px; margin-bottom:8px;">
-        <img src="{{ public_path('gambar/logo.png') }}" alt="GSC"
-            style="height:70px; position:absolute; left:0; top:0;">
-        <img src="{{ public_path('gambar/logo1.png') }}" alt="Akuatik Indonesia"
-            style="height:70px; position:absolute; right:0; top:0;">
+    <div class="header-logos">
+        <img src="{{ public_path('gambar/logo jaguar.png') }}" alt="logo jaguar">
+        <img src="{{ public_path('gambar/logo.png') }}" alt="logo utama">
+        <img src="{{ public_path('gambar/Logo Conie.png') }}" alt="logo conie">
     </div>
-    <div style="text-align:center; margin-bottom:16px;">
-        <strong>BUKU HASIL<br>
-            HAORNAS CUP SWIMMING 2025<br>
-            SE PACITAN<br>
-            PACITAN, 14 SEPTEMBER 2025</strong>
-    </div>
-    <h2>{{ $kompetisi->nama_kompetisi }}</h2>
-    <p><strong>Tanggal Mulai:</strong> {{ $kompetisi->tgl_mulai }}</p>
-    <p><strong>Tanggal Selesai:</strong> {{ $kompetisi->tgl_selesai }}</p>
-    <p><strong>Lokasi:</strong> {{ $kompetisi->lokasi }}</p>
+
+    <div class="title">{{ strtoupper($kompetisi->nama_kompetisi ?? '-') }}</div>
+    <div class="subtitle">{{ $kompetisi->lokasi ?? '' }} &nbsp; | &nbsp; {{ $kompetisi->tgl_mulai ?? '' }} @if($kompetisi->tgl_selesai) - {{ $kompetisi->tgl_selesai }} @endif</div>
+    <div class="small">Dicetak: {{ now()->format('d M Y H:i') }}</div>
 
     @foreach ($lomba as $item)
         <h4>
