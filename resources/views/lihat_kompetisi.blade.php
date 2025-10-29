@@ -47,11 +47,20 @@
                 class="inline-flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-md">
                 <i class="fas fa-plus mr-2"></i> Tambah Lomba
             </a>
-            <form action="{{ route('sort_all_peserta', $kompetisi->id) }}" method="POST">
+            <form action="{{ route('sort_all_peserta', $kompetisi->id) }}" method="POST" class="inline-block">
                 @csrf
                 <button type="submit"
                     class="inline-flex items-center justify-center px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg shadow-md">
                     <i class="fas fa-sort-amount-up-alt mr-2"></i> Urutkan Peserta Berdasarkan Limit Waktu
+                </button>
+            </form>
+
+            <!-- NEW: Center-Out untuk semua nomor lomba sekaligus -->
+            <form action="{{ route('center_max_limit_all', $kompetisi->id) }}" method="POST" class="inline-block">
+                @csrf
+                <button type="submit"
+                    class="inline-flex items-center justify-center px-4 py-2 bg-pink-600 hover:bg-pink-700 text-white text-sm font-medium rounded-lg shadow-md">
+                    <i class="fas fa-arrows-alt-h mr-2"></i> Limit Tertinggi ke Tengah (Semua Lomba)
                 </button>
             </form>
         </div>
@@ -88,20 +97,6 @@
                                 <h5 class="text-sm md:text-md font-semibold text-gray-700 mt-2">
                                     Nomor Lomba {{ $item->nomor_lomba }} - Seri {{ $seri }}
                                 </h5>
-                                <!-- Tombol untuk menaruh peserta limit tertinggi di tengah -->
-                                @if (!empty($seri))
-                                    <form
-                                        action="{{ route('center_max_limit_peserta', ['lomba_id' => $item->id, 'seri' => $seri]) }}"
-                                        method="POST">
-                                        @csrf
-                                        <button type="submit"
-                                            class="inline-flex items-center px-3 py-1 text-xs font-medium text-white bg-pink-600 rounded hover:bg-pink-700">
-                                            <i class="fas fa-arrows-alt-h mr-1"></i> Limit Tertinggi ke Tengah
-                                        </button>
-                                    </form>
-                                @else
-                                    <p class="text-red-500 text-xs">Seri belum diatur, tidak bisa urutkan ke tengah.</p>
-                                @endif
 
                                 <!-- Scrollable Table Wrapper -->
                                 <div class="overflow-x-auto rounded-md shadow-sm mt-2">

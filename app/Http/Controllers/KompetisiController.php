@@ -557,6 +557,83 @@ class KompetisiController extends Controller
         return back()->with('success', 'Peserta pada seri ini sudah diurutkan dengan Center-Out Sorting.');
     }
 
+    // New: Terapkan Center-Out Sorting untuk semua nomor lomba pada sebuah kompetisi (semua seri)
+    public function centerMaxLimitAll($kompetisi_id)
+    {
+        // Ambil semua lomba pada kompetisi
+        $lombaList = DB::table('lomba')->where('kompetisi_id', $kompetisi_id)->get();
+
+        foreach ($lombaList as $lomba) {
+            // Ambil semua seri yang ada untuk lomba ini
+            $seriList = DB::table('detail_lomba')
+                ->where('detail_lomba.lomba_id', $lomba->id)
+                ->distinct()
+                ->pluck('seri')
+                ->filter(function ($s) { return !is_null($s) && $s !== ''; })
+                ->values();
+
+            foreach ($seriList as $seri) {
+                // Ambil peserta untuk seri ini
+                $kelompok = DB::table('detail_lomba')
+                    ->where('detail_lomba.lomba_id', $lomba->id)
+                    ->where('detail_lomba.seri', $seri)
+                    ->join('peserta', 'detail_lomba.peserta_id', '=', 'peserta.id')
+                    ->select('detail_lomba.id', 'detail_lomba.peserta_id', 'detail_lomba.limit', 'detail_lomba.keterangan')
+                    ->orderBy('detail_lomba.urutan')
+                    ->get();
+
+                if ($kelompok->isEmpty()) {
+                    continue;
+                }
+
+                // Filter keluarin DQ/NS jika diperlukan (konsisten dengan hasilJuaraUmum)
+                $sorted = $kelompok->filter(function($d) {
+                    return !in_array(strtoupper($d->keterangan ?? ''), ['DQ','NS']);
+                })->sortBy(function ($p) {
+                    return is_null($p->limit) || $p->limit === '' ? INF : $p->limit;
+                })->values();
+
+                // Jika setelah filter tidak ada, gunakan semua peserta asli
+                if ($sorted->isEmpty()) {
+                    $sorted = $kelompok->values();
+                }
+
+                // Center-Out Sorting (sama seperti single-seri)
+                $final = [];
+                $count = $sorted->count();
+                $center = intval(floor(($count - 1) / 2));
+                $left = $center;
+                $right = $center + 1;
+                $toggle = true;
+
+                foreach ($sorted as $peserta) {
+                    if ($toggle) {
+                        $final[$left--] = $peserta;
+                    } else {
+                        $final[$right++] = $peserta;
+                    }
+                    $toggle = !$toggle;
+                }
+
+                ksort($final);
+                $final = array_values($final);
+
+                // Update no_lintasan hanya pada detail_lomba yang sesuai (lomba + seri)
+                foreach ($final as $i => $pes) {
+                    DB::table('detail_lomba')
+                        ->where('id', $pes->id)
+                        ->where('detail_lomba.lomba_id', $lomba->id)
+                        ->where('seri', $seri)
+                        ->update([
+                            'no_lintasan' => $i + 1
+                        ]);
+                }
+            }
+        }
+
+        return redirect()->back()->with('success', 'Semua nomor lomba telah diatur (Center-Out) berdasarkan limit.');
+    }
+
     public function klub()
     {
         $klub = Auth::user()->klub;

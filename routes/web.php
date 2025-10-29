@@ -177,6 +177,11 @@ Route::get('/hasil/export/excel/{id}', [ExportController::class, 'exportExcel'])
 Route::post('/kompetisi/{id}/randomize-all', [KompetisiController::class, 'randomizeAllPeserta'])->name('randomize_all_peserta');
 Route::post('/kompetisi/{id}/sort-all-peserta', [KompetisiController::class, 'sortAllPeserta'])
     ->name('sort_all_peserta');
+
+// NEW: route untuk menjalankan Center-Out untuk semua lomba di satu kompetisi
+Route::post('/kompetisi/{id}/center-all', [KompetisiController::class, 'centerMaxLimitAll'])
+    ->name('center_max_limit_all');
+
 Route::post('/lomba/{lomba_id}/seri/{seri}/center-max-limit', [KompetisiController::class, 'centerMaxLimitPeserta'])
     ->name('center_max_limit_peserta');
 
