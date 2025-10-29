@@ -11,90 +11,51 @@
             font-size: 12px;
         }
 
+        /* Logo center + ukuran aman agar tidak terpotong */
+        .header {
+            text-align: center;              /* pastikan seluruh header ter-center */
+            margin-top: 8px;
+            margin-bottom: 8px;
+            page-break-inside: avoid;
+        }
+
+        .logos {
+            display: inline-block;           /* inline-block agar berada tepat di tengah */
+            text-align: center;
+            margin-bottom: 6px;
+        }
+
+        .logos img {
+            height: 44px;                    /* kecilkan sesuai kebutuhan */
+            width: auto;
+            margin: 0 10px;                  /* jarak antar logo */
+            object-fit: contain;
+            vertical-align: middle;
+        }
+
+        .title,
+        .subtitle,
+        .small {
+            text-align: center;
+        }
+
+        /* tetap jaga tabel dan teks tetap rapi */
         table {
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 16px;
         }
-
-        th,
-        td {
-            /* border: 1px solid #222; */
-            /* Hapus border pada td */
-            padding: 6px 8px;
-        }
-
-        th {
-            background: #f3f3f3;
-            border: 1px solid #222;
-            /* Tambahkan border hanya pada th jika ingin garis di header saja */
-        }
-
-        h2,
-        h4,
-        h5 {
-            margin: 8px 0;
-        }
-
-        .seri-title {
-            margin-top: 10px;
-            margin-bottom: 4px;
-            font-weight: bold;
-        }
-
-        .no-peserta {
-            color: #888;
-            font-style: italic;
-        }
-
-        .success {
-            background: #d4edda;
-            color: #155724;
-            padding: 8px;
-            border-radius: 4px;
-            margin-bottom: 8px;
-        }
-
-        .error {
-            background: #f8d7da;
-            color: #721c24;
-            padding: 8px;
-            border-radius: 4px;
-            margin-bottom: 8px;
-        }
-
-        .ttd-section {
-            margin-top: 60px;
-            text-align: right;
-        }
-
-        .ttd {
-            display: inline-block;
-            text-align: center;
-            margin-right: 60px;
-        }
-
-        .ttd .name {
-            margin-top: 80px;
-            /* untuk ruang tanda tangan */
-            font-weight: bold;
-            text-decoration: underline;
-        }
-
-        .ttd .role {
-            margin-top: 4px;
-        }
+        th, td { padding:6px 8px; font-size:11px; text-align: left; }
     </style>
 </head>
 
 <body>
-    <div class="header">
-        <div class="logos">
-            <img src="{{ public_path('gambar/logo jaguar.png') }}" alt="logo1">
-            <img src="{{ public_path('gambar/logo.png') }}" alt="logo2">
-            <img src="{{ public_path('gambar/Logo Conie.png') }}" alt="logo3">
+    <div class="header" role="banner" aria-label="Header kompetisi">
+        <div class="logos" aria-hidden="false">
+            <img src="{{ public_path('gambar/logo jaguar.png') }}" alt="logo jaguar">
+            <img src="{{ public_path('gambar/logo.png') }}" alt="logo utama">
+            <img src="{{ public_path('gambar/Logo Conie.png') }}" alt="logo conie">
         </div>
-
         <div class="title">{{ strtoupper($kompetisi->nama_kompetisi ?? '-') }}</div>
         <div class="subtitle">{{ $kompetisi->lokasi ?? '' }} &nbsp; | &nbsp; {{ $kompetisi->tgl_mulai ?? '' }} @if($kompetisi->tgl_selesai) - {{ $kompetisi->tgl_selesai }} @endif</div>
         <div class="small">Dicetak: {{ now()->format('d M Y H:i') }}</div>
