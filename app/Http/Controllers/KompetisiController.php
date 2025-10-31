@@ -382,30 +382,24 @@ class KompetisiController extends Controller
                 $minPerSlot = 2;
                 $required = $minPerSlot * $slots;
 
-                // Jika remainder kurang dari required, coba "pinjam" dari seri penuh di bagian bawah
-                $borrowIndex = $jumlahSeri - $fullBottomCount; // index pertama dari seri penuh (jika ada)
-                while ($remainder < $required && $borrowIndex < $jumlahSeri) {
-                    // cari dari bawah (last full series index)
-                    $lastFullIdx = $jumlahSeri - 1;
-                    // temukan seri dari bawah yang > minPerSlot (bisa dipinjam)
-                    while ($lastFullIdx >= 0 && $seriDistribusi[$lastFullIdx] <= 0) $lastFullIdx--;
-                    if ($lastFullIdx < 0) break;
+                // Jika remainder kurang dari required, coba "pinjam" dari seri penuh di bagian bawah.
+                // Perubahan: pinjam dari seri penuh paling atas (indeks = jumlahSeri - fullBottomCount)
+                // agar seri paling bawah tetap penuh jika memungkinkan.
+                $borrowStart = $jumlahSeri - $fullBottomCount; // index pertama dari seri penuh (jika ada)
+                if ($borrowStart < 0) $borrowStart = 0;
 
-                    if ($seriDistribusi[$lastFullIdx] - 1 >= 1) {
-                        // pinjam 1 dari seri tersebut
-                        $seriDistribusi[$lastFullIdx] -= 1;
-                        $remainder += 1;
-                        // jika seri yang dipinjam turun di bawah jumlahLintasan, itu bukan masalah
-                    } else {
-                        // tidak bisa pinjam lagi
-                        break;
+                // ulangi peminjaman sampai terpenuhi atau tidak bisa meminjam lagi
+                while ($remainder < $required) {
+                    $borrowed = false;
+                    for ($idx = $borrowStart; $idx < $jumlahSeri && $remainder < $required; $idx++) {
+                        if ($seriDistribusi[$idx] > 1) {
+                            // pinjam 1 dari seri ini
+                            $seriDistribusi[$idx] -= 1;
+                            $remainder += 1;
+                            $borrowed = true;
+                        }
                     }
-
-                    // hentikan jika sudah cukup untuk memenuhi required
-                    if ($remainder >= $required) break;
-
-                    // cari lagi jika perlu
-                    $lastFullIdx--;
+                    if (!$borrowed) break; // tidak ada seri yang bisa dipinjam lagi
                 }
 
                 // Setelah upaya pinjam, jika masih kurang, kita tetap lanjutkan dengan apa yang ada.
