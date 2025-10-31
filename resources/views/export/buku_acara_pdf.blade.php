@@ -8,27 +8,28 @@
     <style>
         body {
             font-family: DejaVu Sans, sans-serif;
-            font-size: 12px;
+            font-size: 11px; /* diperkecil */
+            line-height: 1.1;
         }
 
         /* Logo center + ukuran aman agar tidak terpotong */
         .header {
-            text-align: center;              /* pastikan seluruh header ter-center */
-            margin-top: 8px;
-            margin-bottom: 8px;
+            text-align: center;
+            margin-top: 6px;      /* dikurangi */
+            margin-bottom: 6px;   /* dikurangi */
             page-break-inside: avoid;
         }
 
         .logos {
-            display: inline-block;           /* inline-block agar berada tepat di tengah */
+            display: inline-block;
             text-align: center;
-            margin-bottom: 6px;
+            margin-bottom: 4px;   /* dikurangi */
         }
 
         .logos img {
-            height: 44px;                    /* kecilkan sesuai kebutuhan */
+            height: 34px;         /* diperkecil */
             width: auto;
-            margin: 0 10px;                  /* jarak antar logo */
+            margin: 0 6px;        /* jarak antar logo dikurangi */
             object-fit: contain;
             vertical-align: middle;
         }
@@ -39,13 +40,37 @@
             text-align: center;
         }
 
+        h4 {
+            font-size: 12px;      /* diperkecil */
+            margin: 6px 0 8px;    /* rapatkan jarak atas/bawah */
+        }
+
+        .seri-title {
+            font-size: 11px;
+            margin: 4px 0;        /* rapat */
+        }
+
         /* tetap jaga tabel dan teks tetap rapi */
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 16px;
+            margin-bottom: 8px;   /* dikurangi */
+            page-break-inside: avoid;
         }
-        th, td { padding:6px 8px; font-size:11px; text-align: left; }
+        th, td {
+            padding: 4px 6px;     /* padding dikurangi untuk rapat */
+            font-size: 10px;      /* diperkecil */
+            text-align: left;
+            vertical-align: middle;
+            line-height: 1.05;
+        }
+
+        /* opsional: baris kosong lebih ringkas */
+        .no-peserta {
+            padding: 6px 0;
+            font-size: 10px;
+        }
+
     </style>
 </head>
 
