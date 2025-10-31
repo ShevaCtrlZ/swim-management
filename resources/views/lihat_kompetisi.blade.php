@@ -98,77 +98,80 @@
                                     Nomor Lomba {{ $item->nomor_lomba }} - Seri {{ $seri }}
                                 </h5>
 
-                                <!-- Scrollable Table Wrapper -->
-                                <div class="overflow-x-auto rounded-md shadow-sm mt-2">
-                                    <table class="min-w-full border-collapse border border-gray-300 text-sm">
-                                        <thead class="bg-gray-100 text-left">
-                                            <tr>
-                                                <th class="border border-gray-300 px-4 py-2">No Lint</th>
-                                                <th class="border border-gray-300 px-4 py-2">Nama Peserta</th>
-                                                <th class="border border-gray-300 px-4 py-2">Lahir</th>
-                                                <th class="border border-gray-300 px-4 py-2">Asal Klub</th>
-                                                <th class="border border-gray-300 px-4 py-2">Limit Waktu</th>
-                                                <th class="border border-gray-300 px-4 py-2">Hasil</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @foreach ($kelompok as $peserta)
-                                                <tr class="hover:bg-gray-50">
-                                                    <td class="border border-gray-300 px-4 py-2">{{ $loop->iteration }}
-                                                    </td>
-                                                    <td class="border border-gray-300 px-4 py-2">
-                                                        {{ $peserta->nama_peserta }}</td>
-                                                    <td class="border border-gray-300 px-4 py-2">{{ $peserta->tgl_lahir }}
-                                                    </td>
-                                                    <td class="border border-gray-300 px-4 py-2">{{ $peserta->asal_klub }}
-                                                    </td>
-                                                    <td class="border border-gray-300 px-4 py-2">{{ $peserta->limit }}</td>
-                                                    <td class="border border-gray-300 px-4 py-2">
-                                                        <form action="{{ route('update_hasil', $peserta->id) }}"
-                                                            method="POST">
-                                                            @csrf
-                                                            <div class="flex space-x-2 items-center">
-                                                                <input type="text" name="hasil"
-                                                                    value="{{ $peserta->catatan_waktu ?? '00:00:00' }}"
-                                                                    class="border border-gray-300 rounded px-2 py-1 text-sm w-24">
-                                                                @error('hasil')
-                                                                    <div class="text-red-600 text-sm mt-1">{{ $message }}
-                                                                    </div>
-                                                                @enderror
+                                <!-- NEW: Form per seri untuk submit semua hasil sekaligus -->
+                                <form
+                                    action="{{ route('update_hasil_series', ['lomba_id' => $item->id, 'seri' => $seri]) }}"
+                                    method="POST">
+                                    @csrf
 
-                                                                <select name="keterangan"
+                                    <!-- Scrollable Table Wrapper -->
+                                    <div class="overflow-x-auto rounded-md shadow-sm mt-2">
+                                        <table class="min-w-full border-collapse border border-gray-300 text-sm">
+                                            <thead class="bg-gray-100 text-left">
+                                                <tr>
+                                                    <th class="border border-gray-300 px-4 py-2">No Lint</th>
+                                                    <th class="border border-gray-300 px-4 py-2">Nama Peserta</th>
+                                                    <th class="border border-gray-300 px-4 py-2">Lahir</th>
+                                                    <th class="border border-gray-300 px-4 py-2">Asal Klub</th>
+                                                    <th class="border border-gray-300 px-4 py-2">Limit Waktu</th>
+                                                    <th class="border border-gray-300 px-4 py-2">Hasil</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach ($kelompok as $peserta)
+                                                    <tr class="hover:bg-gray-50">
+                                                        <td class="border border-gray-300 px-4 py-2">{{ $loop->iteration }}
+                                                        </td>
+                                                        <td class="border border-gray-300 px-4 py-2">
+                                                            {{ $peserta->nama_peserta }}</td>
+                                                        <td class="border border-gray-300 px-4 py-2">
+                                                            {{ $peserta->tgl_lahir }}</td>
+                                                        <td class="border border-gray-300 px-4 py-2">
+                                                            {{ $peserta->asal_klub }}</td>
+                                                        <td class="border border-gray-300 px-4 py-2">{{ $peserta->limit }}
+                                                        </td>
+                                                        <td class="border border-gray-300 px-4 py-2">
+                                                            <div class="flex space-x-2 items-center">
+                                                                <!-- note: $peserta->id adalah id detail_lomba -->
+                                                                <input type="text" name="hasil[{{ $peserta->id }}]"
+                                                                    value="{{ $peserta->catatan_waktu ?? '' }}"
+                                                                    class="border border-gray-300 rounded px-2 py-1 text-sm w-24"
+                                                                    placeholder="HH:MM:SS" />
+
+                                                                <select name="keterangan[{{ $peserta->id }}]"
                                                                     class="border border-gray-300 rounded px-2 py-1 text-sm">
-                                                                    <option value="">-</option>
+                                                                    <option value=""
+                                                                        {{ empty($peserta->keterangan) ? 'selected' : '' }}>
+                                                                        -</option>
                                                                     <option value="NS"
-                                                                        {{ $peserta->keterangan == 'NS' ? 'selected' : '' }}>
+                                                                        {{ ($peserta->keterangan ?? '') === 'NS' ? 'selected' : '' }}>
                                                                         NS</option>
                                                                     <option value="DQ"
-                                                                        {{ $peserta->keterangan == 'DQ' ? 'selected' : '' }}>
+                                                                        {{ ($peserta->keterangan ?? '') === 'DQ' ? 'selected' : '' }}>
                                                                         DQ</option>
                                                                 </select>
-                                                                @error('keterangan')
-                                                                    <div class="text-red-600 text-sm mt-1">{{ $message }}
-                                                                    </div>
-                                                                @enderror
-
-                                                                <button type="submit"
-                                                                    class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs">
-                                                                    Simpan
-                                                                </button>
                                                             </div>
-                                                        </form>
-                                                        {{-- Tampilkan keterangan jika ada --}}
-                                                        @if ($peserta->keterangan)
-                                                            <span
-                                                                class="text-xs text-red-600 italic">{{ $peserta->keterangan }}</span>
-                                                        @endif
-                                                    </td>
 
-                                                </tr>
-                                            @endforeach
-                                        </tbody>
-                                    </table>
-                                </div>
+                                                            {{-- Tampilkan keterangan jika ada --}}
+                                                            @if ($peserta->keterangan)
+                                                                <div class="text-xs text-red-600 italic mt-1">
+                                                                    {{ $peserta->keterangan }}</div>
+                                                            @endif
+                                                        </td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    <div class="mt-3 text-right">
+                                        <button type="submit"
+                                            class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg shadow-md">
+                                            Simpan Seri {{ $seri }}
+                                        </button>
+                                    </div>
+                                </form>
+                                <!-- END form per seri -->
                             </div>
                         @endforeach
                     @else

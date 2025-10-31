@@ -758,4 +758,53 @@ public function exportPesertaKlub($kompetisi_id, $klub){
         $pdf = Pdf::loadView('klub.peserta_pdf', compact('kompetisi','pesertas','klub'));
         return $pdf->download('peserta_'.$kompetisi->id.'_'.preg_replace('/[^A-Za-z0-9]/','_',urldecode($klub)).'.pdf');
         }
+
+        public function updateHasilSeries(Request $request, $lomba_id, $seri = null)
+    {
+        // Jika seri tidak disertakan, batalkan dengan pesan yang jelas.
+        if (is_null($seri) || $seri === '') {
+            return redirect()->back()->with('error', 'Parameter seri diperlukan untuk menyimpan hasil per seri.');
+        }
+
+        // Pastikan seri numeric
+        if (!is_numeric($seri)) {
+            return redirect()->back()->with('error', 'Parameter seri tidak valid.');
+        }
+
+        // Terima array: hasil[detailId] dan keterangan[detailId]
+        $hasilArr = $request->input('hasil', []);
+        $keteranganArr = $request->input('keterangan', []);
+
+        foreach ($hasilArr as $detailId => $waktu) {
+            $keterangan = $keteranganArr[$detailId] ?? null;
+            $keterangan = $keterangan === '' ? null : $keterangan;
+
+            // jika NS atau DQ dipilih, set waktu ke '00:00:00'
+            if (in_array(strtoupper($keterangan ?? ''), ['NS', 'DQ'])) {
+                $catatanWaktu = '00:00:00';
+            } else {
+                // validasi format HH:MM:SS atau kosong → biarkan kosong/null bila tidak valid
+                $waktu = trim((string)$waktu);
+                if ($waktu === '') {
+                    $catatanWaktu = null;
+                } elseif (preg_match('/^\d{2}:\d{2}:\d{2}$/', $waktu)) {
+                    $catatanWaktu = $waktu;
+                } else {
+                    // skip update untuk entri invalid
+                    continue;
+                }
+            }
+
+            DB::table('detail_lomba')
+                ->where('id', $detailId)
+                ->where('lomba_id', $lomba_id)
+                ->where('seri', $seri)
+                ->update([
+                    'catatan_waktu' => $catatanWaktu,
+                    'keterangan' => $keterangan,
+                ]);
+        }
+
+        return redirect()->back()->with('success', 'Hasil seri telah disimpan.');
+    }
 }

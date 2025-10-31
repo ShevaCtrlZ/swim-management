@@ -185,6 +185,10 @@ Route::post('/kompetisi/{id}/center-all', [KompetisiController::class, 'centerMa
 Route::post('/lomba/{lomba_id}/seri/{seri}/center-max-limit', [KompetisiController::class, 'centerMaxLimitPeserta'])
     ->name('center_max_limit_peserta');
 
+// NEW: route untuk menyimpan hasil per seri (batch) -- seri dibuat optional untuk menghindari Missing parameter saat URL dibentuk tanpa seri
+Route::post('/lomba/{lomba_id}/seri/{seri?}/update-hasil-series', [KompetisiController::class, 'updateHasilSeries'])
+    ->name('update_hasil_series');
+
 Route::get('/kompetisi/{id}/juara-umum', [KompetisiController::class, 'hasilJuaraUmum'])->name('kompetisi.juara_umum');
 Route::get('/kompetisi/{kompetisi}/starting-list/{klub?}', [ExportPdfController::class, 'exportPesertaKlub'])
     ->name('export.starting_list_pdf');
