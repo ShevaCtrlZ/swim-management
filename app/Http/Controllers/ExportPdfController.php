@@ -12,10 +12,29 @@ use Illuminate\Support\Facades\Auth;
 
 class ExportPdfController extends Controller
 {
+    // helper: milliseconds -> MM:SS:MS
+    private function msToDisplay(?int $ms): string {
+        if ($ms === null) return '00:00:000';
+        $ms = (int)$ms;
+        $totalSeconds = intdiv($ms, 1000);
+        $minutes = intdiv($totalSeconds, 60);
+        $seconds = $totalSeconds % 60;
+        $millis = $ms % 1000;
+        return sprintf('%02d:%02d:%03d', $minutes, $seconds, $millis);
+    }
+
     public function hasilKompetisi($kompetisi_id)
     {
         $kompetisi = Kompetisi::findOrFail($kompetisi_id);
         $lomba = Lomba::with(['detailLomba.peserta'])->where('kompetisi_id', $kompetisi_id)->get();
+
+        // convert catatan_waktu (ms) to display string and overwrite field so views that use catatan_waktu show formatted value
+        foreach ($lomba as $lb) {
+            foreach ($lb->detailLomba as $detail) {
+                $raw = $detail->catatan_waktu ?? null;
+                $detail->catatan_waktu = is_numeric($raw) ? $this->msToDisplay((int)$raw) : ($raw ?? '00:00:000');
+            }
+        }
 
         return PDF::loadView('export.hasil_pdf', compact('kompetisi', 'lomba'))
             ->download('hasil_kompetisi.pdf');
@@ -25,6 +44,13 @@ class ExportPdfController extends Controller
     {
         $kompetisi = Kompetisi::findOrFail($kompetisi_id);
         $lomba = Lomba::with(['detailLomba.peserta'])->where('kompetisi_id', $kompetisi_id)->get();
+
+        foreach ($lomba as $lb) {
+            foreach ($lb->detailLomba as $detail) {
+                $raw = $detail->catatan_waktu ?? null;
+                $detail->catatan_waktu = is_numeric($raw) ? $this->msToDisplay((int)$raw) : ($raw ?? '00:00:000');
+            }
+        }
 
         $pdf = PDF::loadView('export.buku_acara_pdf', compact('kompetisi', 'lomba'));
         return $pdf->stream('buku_acara.pdf');
@@ -73,6 +99,13 @@ class ExportPdfController extends Controller
         ->orderBy('detail_lomba.seri')
         ->orderBy('detail_lomba.no_lintasan')
         ->get();
+
+        // format catatan_waktu to display string and overwrite catatan_waktu so views use formatted value
+        $pesertas = $pesertas->map(function($row) {
+            $raw = $row->catatan_waktu ?? null;
+            $row->catatan_waktu = is_numeric($raw) ? $this->msToDisplay((int)$raw) : ($raw ?? '00:00:000');
+            return $row;
+        });
 
         $filenameClub = $klubParam ? preg_replace('/[^A-Za-z0-9_-]/', '_', $klubParam) : 'all';
         $filename = "starting_list_{$kompetisi->id}_{$filenameClub}.pdf";

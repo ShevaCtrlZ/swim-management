@@ -119,24 +119,31 @@
                                             </thead>
                                             <tbody>
                                                 @foreach ($kelompok as $peserta)
+                                                    @php
+                                                        $raw = $peserta->catatan_waktu ?? null;
+                                                        if (is_numeric($raw)) {
+                                                            $ms = (int)$raw;
+                                                            $totalSeconds = intdiv($ms, 1000);
+                                                            $minutes = intdiv($totalSeconds, 60);
+                                                            $seconds = $totalSeconds % 60;
+                                                            $millis = $ms % 1000;
+                                                            $displayWaktu = sprintf('%02d:%02d:%03d', $minutes, $seconds, $millis);
+                                                        } else {
+                                                            $displayWaktu = $peserta->catatan_waktu ?? '00:00:000';
+                                                        }
+                                                    @endphp
                                                     <tr class="hover:bg-gray-50">
-                                                        <td class="border border-gray-300 px-4 py-2">{{ $loop->iteration }}
-                                                        </td>
-                                                        <td class="border border-gray-300 px-4 py-2">
-                                                            {{ $peserta->nama_peserta }}</td>
-                                                        <td class="border border-gray-300 px-4 py-2">
-                                                            {{ $peserta->tgl_lahir }}</td>
-                                                        <td class="border border-gray-300 px-4 py-2">
-                                                            {{ $peserta->asal_klub }}</td>
-                                                        <td class="border border-gray-300 px-4 py-2">{{ $peserta->limit }}
-                                                        </td>
+                                                        <td class="border border-gray-300 px-4 py-2">{{ $loop->iteration }}</td>
+                                                        <td class="border border-gray-300 px-4 py-2">{{ $peserta->nama_peserta }}</td>
+                                                        <td class="border border-gray-300 px-4 py-2">{{ $peserta->tgl_lahir }}</td>
+                                                        <td class="border border-gray-300 px-4 py-2">{{ $peserta->asal_klub }}</td>
+                                                        <td class="border border-gray-300 px-4 py-2">{{ $peserta->limit }}</td>
                                                         <td class="border border-gray-300 px-4 py-2">
                                                             <div class="flex space-x-2 items-center">
-                                                                <!-- note: $peserta->id adalah id detail_lomba -->
                                                                 <input type="text" name="hasil[{{ $peserta->id }}]"
-                                                                    value="{{ $peserta->catatan_waktu ?? '' }}"
+                                                                    value="{{ $displayWaktu }}"
                                                                     class="border border-gray-300 rounded px-2 py-1 text-sm w-24"
-                                                                    placeholder="HH:MM:SS" />
+                                                                    placeholder="MM:SS:MS" />
 
                                                                 <select name="keterangan[{{ $peserta->id }}]"
                                                                     class="border border-gray-300 rounded px-2 py-1 text-sm">

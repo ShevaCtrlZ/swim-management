@@ -13,6 +13,38 @@ use Illuminate\Support\Facades\Auth;
 
 class KompetisiController extends Controller
 {
+	// helper: parse "MM:SS:MS" -> milliseconds (int) OR return null if invalid/empty
+	private function parseTimeToMs(?string $s): ?int {
+		if ($s === null) return null;
+		$s = trim($s);
+		if ($s === '') return null;
+		// format MM:SS:MS (MS = 3 digits)
+		if (preg_match('/^(\d{2}):(\d{2}):(\d{3})$/', $s, $m)) {
+			$minutes = (int)$m[1];
+			$seconds = (int)$m[2];
+			$millis = (int)$m[3];
+			return (($minutes * 60) + $seconds) * 1000 + $millis;
+		}
+		// fallback: HH:MM:SS -> convert to ms
+		if (preg_match('/^(\d{2}):(\d{2}):(\d{2})$/', $s, $m2)) {
+			$hours = (int)$m2[1];
+			$minutes = (int)$m2[2];
+			$seconds = (int)$m2[3];
+			return (($hours * 3600) + ($minutes * 60) + $seconds) * 1000;
+		}
+		return null;
+	}
+
+	// helper: format milliseconds -> "MM:SS:MS"
+	private function msToDisplay(?int $ms): string {
+		if ($ms === null) return '00:00:000';
+		$ms = (int)$ms;
+		$totalSeconds = intdiv($ms, 1000);
+		$minutes = intdiv($totalSeconds, 60);
+		$seconds = $totalSeconds % 60;
+		$millis = $ms % 1000;
+		return sprintf('%02d:%02d:%03d', $minutes, $seconds, $millis);
+	}
 
     public function showListView(): View
     {
@@ -295,26 +327,32 @@ class KompetisiController extends Controller
     }
 
     public function updateHasil(Request $request, $id)
-    {
-        // Validasi input
-        $request->validate([
-            'hasil' => 'nullable|string|regex:/^\d{2}:\d{2}:\d{2}$/',
-            'keterangan' => 'nullable|in:NS,DQ',
-        ]);
+	{
+	    // Validasi input: MM:SS:MS (MS = 3 digit milliseconds) atau kosong
+	    $request->validate([
+	        'hasil' => 'nullable|string',
+	        'keterangan' => 'nullable|in:NS,DQ',
+	    ]);
 
-        // Jika NS atau DQ dipilih, maka waktu diset ke '00:00:00'
-        $catatanWaktu = $request->keterangan ? '00:00:00' : $request->hasil;
+	    $keterangan = $request->keterangan ?? null;
 
-        // Update ke database
-        DB::table('detail_lomba')
-            ->where('id', $id)
-            ->update([
-                'catatan_waktu' => $catatanWaktu,
-                'keterangan' => $request->keterangan,
-            ]);
+	    if ($keterangan && in_array(strtoupper($keterangan), ['NS','DQ'])) {
+	        // simpan 0 ms untuk NS/DQ (atau bisa diset NULL tergantung preferensi)
+	        $catatanWaktuMs = 0;
+	    } else {
+	        $parsed = $this->parseTimeToMs($request->hasil ?? '');
+	        $catatanWaktuMs = $parsed; // can be null
+	    }
 
-        return redirect()->back()->with('success', 'Hasil lomba berhasil diperbarui.');
-    }
+	    DB::table('detail_lomba')
+	        ->where('id', $id)
+	        ->update([
+	            'catatan_waktu' => $catatanWaktuMs,
+	            'keterangan' => $keterangan,
+	        ]);
+
+	    return redirect()->back()->with('success', 'Hasil lomba berhasil diperbarui.');
+	}
 
     public function destroy($id)
     {
@@ -754,51 +792,44 @@ public function exportPesertaKlub($kompetisi_id, $klub){
         }
 
         public function updateHasilSeries(Request $request, $lomba_id, $seri = null)
-    {
-        // Jika seri tidak disertakan, batalkan dengan pesan yang jelas.
-        if (is_null($seri) || $seri === '') {
-            return redirect()->back()->with('error', 'Parameter seri diperlukan untuk menyimpan hasil per seri.');
-        }
+	{
+	    // Jika seri tidak disertakan, batalkan dengan pesan yang jelas.
+	    if (is_null($seri) || $seri === '') {
+	        return redirect()->back()->with('error', 'Parameter seri diperlukan untuk menyimpan hasil per seri.');
+	    }
 
-        // Pastikan seri numeric
-        if (!is_numeric($seri)) {
-            return redirect()->back()->with('error', 'Parameter seri tidak valid.');
-        }
+	    if (!is_numeric($seri)) {
+	        return redirect()->back()->with('error', 'Parameter seri tidak valid.');
+	    }
 
-        // Terima array: hasil[detailId] dan keterangan[detailId]
-        $hasilArr = $request->input('hasil', []);
-        $keteranganArr = $request->input('keterangan', []);
+	    $hasilArr = $request->input('hasil', []);
+	    $keteranganArr = $request->input('keterangan', []);
 
-        foreach ($hasilArr as $detailId => $waktu) {
-            $keterangan = $keteranganArr[$detailId] ?? null;
-            $keterangan = $keterangan === '' ? null : $keterangan;
+	    foreach ($hasilArr as $detailId => $waktu) {
+	        $keterangan = $keteranganArr[$detailId] ?? null;
+	        $keterangan = $keterangan === '' ? null : $keterangan;
 
-            // jika NS atau DQ dipilih, set waktu ke '00:00:00'
-            if (in_array(strtoupper($keterangan ?? ''), ['NS', 'DQ'])) {
-                $catatanWaktu = '00:00:00';
-            } else {
-                // validasi format HH:MM:SS atau kosong → biarkan kosong/null bila tidak valid
-                $waktu = trim((string)$waktu);
-                if ($waktu === '') {
-                    $catatanWaktu = null;
-                } elseif (preg_match('/^\d{2}:\d{2}:\d{2}$/', $waktu)) {
-                    $catatanWaktu = $waktu;
-                } else {
-                    // skip update untuk entri invalid
-                    continue;
-                }
-            }
+	        if ($keterangan && in_array(strtoupper($keterangan), ['NS', 'DQ'])) {
+	            $catatanWaktuMs = 0;
+	        } else {
+	            $parsed = $this->parseTimeToMs((string)$waktu);
+	            if ($parsed === null) {
+	                // skip invalid format
+	                continue;
+	            }
+	            $catatanWaktuMs = $parsed;
+	        }
 
-            DB::table('detail_lomba')
-                ->where('id', $detailId)
-                ->where('lomba_id', $lomba_id)
-                ->where('seri', $seri)
-                ->update([
-                    'catatan_waktu' => $catatanWaktu,
-                    'keterangan' => $keterangan,
-                ]);
-        }
+	        DB::table('detail_lomba')
+	            ->where('id', $detailId)
+	            ->where('lomba_id', $lomba_id)
+	            ->where('seri', $seri)
+	            ->update([
+	                'catatan_waktu' => $catatanWaktuMs,
+	                'keterangan' => $keterangan,
+	            ]);
+	    }
 
-        return redirect()->back()->with('success', 'Hasil seri telah disimpan.');
-    }
+	    return redirect()->back()->with('success', 'Hasil seri telah disimpan.');
+	}
 }
