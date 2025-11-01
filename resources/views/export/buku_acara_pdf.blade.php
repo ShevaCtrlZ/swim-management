@@ -8,69 +8,108 @@
     <style>
         body {
             font-family: DejaVu Sans, sans-serif;
-            font-size: 11px; /* diperkecil */
-            line-height: 1.1;
+            font-size: 10.5px;
+            line-height: 1.05;
+            color: #111;
+            margin: 0;
+            padding: 0 8px;
         }
 
-        /* Logo center + ukuran aman agar tidak terpotong */
+        /* Header / logo */
         .header {
             text-align: center;
-            margin-top: 6px;      /* dikurangi */
-            margin-bottom: 6px;   /* dikurangi */
+            margin-top: 6px;
+            margin-bottom: 6px;
             page-break-inside: avoid;
         }
 
         .logos {
             display: inline-block;
             text-align: center;
-            margin-bottom: 4px;   /* dikurangi */
+            margin-bottom: 4px;
         }
 
         .logos img {
-            height: 34px;         /* diperkecil */
+            height: 30px;
             width: auto;
-            margin: 0 6px;        /* jarak antar logo dikurangi */
+            margin: 0 6px;
             object-fit: contain;
             vertical-align: middle;
         }
 
-        .title,
+        .title {
+            font-weight: 700;
+            font-size: 12px;
+            margin-top: 4px;
+            margin-bottom: 4px;
+        }
+
         .subtitle,
         .small {
-            text-align: center;
+            font-size: 9px;
+            color: #444;
+            margin-bottom: 4px;
         }
 
-        h4 {
-            font-size: 12px;      /* diperkecil */
-            margin: 6px 0 8px;    /* rapatkan jarak atas/bawah */
-        }
-
-        .seri-title {
-            font-size: 11px;
-            margin: 4px 0;        /* rapat */
-        }
-
-        /* tetap jaga tabel dan teks tetap rapi */
+        /* Compact table */
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 8px;   /* dikurangi */
             page-break-inside: avoid;
+            margin-bottom: 8px;
+            table-layout: fixed;
+            word-wrap: break-word;
         }
-        th, td {
-            padding: 4px 6px;     /* padding dikurangi untuk rapat */
-            font-size: 10px;      /* diperkecil */
+
+        thead th {
+            background: #f5f5f5;
+            border-bottom: 1px solid #bbb;
+            padding: 4px 6px;
+            font-weight: 700;
+            font-size: 9px;
             text-align: left;
             vertical-align: middle;
-            line-height: 1.05;
         }
 
-        /* opsional: baris kosong lebih ringkas */
+        tbody td {
+            padding: 3px 6px;
+            font-size: 9px;
+            border-bottom: 1px solid #eee;
+            vertical-align: middle;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .seri-title {
+            font-size: 10px;
+            font-weight: 600;
+            margin: 4px 0;
+        }
+
         .no-peserta {
             padding: 6px 0;
-            font-size: 10px;
+            font-size: 9px;
+            color: #666;
+            text-align: center;
         }
 
+        /* column widths */
+        th.col-no { width: 6%; }
+        th.col-lint { width: 8%; }
+        th.col-nama { width: 34%; }
+        th.col-lahir { width: 12%; }
+        th.col-klub { width: 18%; }
+        th.col-limit { width: 10%; }
+        th.col-hasil { width: 12%; }
+        th.col-ket { width: 8%; }
+
+        /* small adjustments for printing */
+        @media print {
+            body { padding: 0 6px; font-size: 10px; }
+            .logos img { height: 28px; }
+        }
     </style>
 </head>
 
@@ -85,7 +124,8 @@
         <div class="subtitle">{{ $kompetisi->lokasi ?? '' }} &nbsp; | &nbsp; {{ $kompetisi->tgl_mulai ?? '' }} @if($kompetisi->tgl_selesai) - {{ $kompetisi->tgl_selesai }} @endif</div>
         <div class="small">Dicetak: {{ now()->format('d M Y H:i') }}</div>
     </div>
-        @if (session('error'))
+
+    @if (session('error'))
         <div class="error">
             <strong>Error!</strong> {{ session('error') }}
         </div>
@@ -98,8 +138,8 @@
     @endif
 
     @foreach ($lomba as $item)
-        <div style="margin-bottom: 24px;">
-            <h4>
+        <div style="margin-bottom: 18px;">
+            <h4 style="margin:6px 0 8px 0;">
                 {{ $item->nomor_lomba }}. {{ $item->jarak }} M GAYA {{ strtoupper($item->jenis_gaya) }} KU
                 {{ $item->tahun_lahir_minimal }} / {{ $item->tahun_lahir_maksimal }} {{ $item->jk }}
             </h4>
@@ -107,37 +147,29 @@
                 $grouped = $item->detailLomba->groupBy('seri')->sortKeys();
             @endphp
             @forelse ($grouped as $seri => $kelompok)
-                <div class="seri-title">
-                    Seri {{ $seri }}
-                </div>
+                <div class="seri-title">Seri {{ $seri }}</div>
                 <table>
                     <thead>
                         <tr>
-                            <th>No Lint</th>
-                            <th>Nama Peserta</th>
-                            <th>Lahir</th>
-                            <th>Asal Klub</th>
-                            <th>Limit Waktu</th>
-                            <th>Hasil</th>
-                            <th>Keterangan</th>
+                            <th class="col-lint">No Lint</th>
+                            <th class="col-nama">Nama Peserta</th>
+                            <th class="col-lahir">Lahir</th>
+                            <th class="col-klub">Asal Klub</th>
+                            <th class="col-limit">Limit Waktu</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse ($kelompok->sortBy('no_lintasan') as $detail)
+                        @forelse ($kelompok->sortBy('no_lintasan') as $index => $detail)
                             <tr>
-                                <td>{{ $detail->no_lintasan ?? $loop->iteration }}</td>
+                                <td>{{ $detail->no_lintasan ?? '-' }}</td>
                                 <td>{{ $detail->peserta->nama_peserta ?? '-' }}</td>
                                 <td>{{ $detail->peserta->tgl_lahir ?? '-' }}</td>
                                 <td>{{ $detail->peserta->asal_klub ?? '-' }}</td>
-                                <td>{{ $detail->limit ?? '-' }}</td>
-                                <td>{{ $detail->catatan_waktu ?? ' ' }}</td>
-                                <td>
-                                    {{ $detail->keterangan ?? ' ' }}
-                                </td>
+                                <td>{{ $detail->limit ?? $detail->limit_waktu ?? '-' }}</td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="no-peserta">Tidak ada peserta untuk seri ini.</td>
+                                <td colspan="8" class="no-peserta">Tidak ada peserta untuk seri ini.</td>
                             </tr>
                         @endforelse
                     </tbody>
