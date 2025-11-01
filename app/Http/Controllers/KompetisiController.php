@@ -37,6 +37,8 @@ class KompetisiController extends Controller
 
 	// helper: format milliseconds -> "MM:SS:MS"
 	private function msToDisplay(?int $ms): string {
+		// sentinel -1 berarti NS/DQ -> tampilkan literal 99:99:99
+		if ($ms === -1) return '99:99:99';
 		if ($ms === null) return '00:00:000';
 		$ms = (int)$ms;
 		$totalSeconds = intdiv($ms, 1000);
@@ -374,7 +376,7 @@ class KompetisiController extends Controller
             if ($jumlahLintasan < 2) continue;
 
             $peserta = DB::table('detail_lomba')
-                ->where('lomba_id', $lomba->id)
+                ->where('detail_lomba.lomba_id', $lomba->id)
                 ->join('peserta', 'detail_lomba.peserta_id', '=', 'peserta.id')
                 ->select('detail_lomba.id', 'peserta.nama_peserta', 'detail_lomba.limit')
                 ->orderByRaw("CASE WHEN detail_lomba.limit IS NULL OR detail_lomba.limit = '' THEN 1 ELSE 0 END, detail_lomba.limit DESC")
@@ -386,11 +388,16 @@ class KompetisiController extends Controller
 
             // Jika peserta <= lintasan, buat hanya 1 seri
             if ($totalPeserta <= $jumlahLintasan) {
-                foreach ($peserta as $i => $pesertaRow) {
+                // gunakan posisi lintasan yang terpusat jika peserta lebih sedikit dari lintasan
+                $assigned = $this->getCentralLanes($jumlahLintasan, $totalPeserta);
+                // pastikan indexing 0..n-1 agar mapping ke $assigned benar
+                $pesertaVals = $peserta->values();
+                foreach ($pesertaVals as $i => $pesertaRow) {
+                    $lane = $assigned[$i] ?? ($i + 1);
                     DB::table('detail_lomba')
                         ->where('id', $pesertaRow->id)
                         ->update([
-                            'no_lintasan' => $i + 1,
+                            'no_lintasan' => $lane,
                             'urutan' => 1,
                             'seri' => 1,
                         ]);
@@ -499,14 +506,23 @@ class KompetisiController extends Controller
                     continue;
                 }
 
-                $pesertaSeri = $peserta->slice($index, $jumlahPeserta);
+                // ambil slice dan reindex agar index 0..n-1
+                $pesertaSeri = $peserta->slice($index, $jumlahPeserta)->values();
                 $index += $jumlahPeserta;
 
+                // jika seri tidak penuh, gunakan urutan lintasan terpusat; jika penuh, gunakan urutan natural 1..N
+                if ($jumlahPeserta < $jumlahLintasan) {
+                    $assignedLanes = $this->getCentralLanes($jumlahLintasan, $jumlahPeserta);
+                } else {
+                    $assignedLanes = range(1, $jumlahLintasan);
+                }
+
                 foreach ($pesertaSeri as $i => $pesertaRow) {
+                    $lane = $assignedLanes[$i] ?? ($i + 1);
                     DB::table('detail_lomba')
                         ->where('id', $pesertaRow->id)
                         ->update([
-                            'no_lintasan' => $i + 1,
+                            'no_lintasan' => $lane,
                             'urutan' => $localSeriNumber,
                             'seri' => $localSeriNumber,
                         ]);
@@ -832,5 +848,56 @@ public function exportPesertaKlub($kompetisi_id, $klub){
 	    }
 
 	    return redirect()->back()->with('success', 'Hasil seri telah disimpan.');
+	}
+
+	// helper: urutkan nomor lintasan berdasarkan kedekatan ke tengah (prioritas kiri jika sama)
+	private function centerLaneOrder(int $lanes): array {
+		$center = ($lanes + 1) / 2.0;
+		$nums = range(1, $lanes);
+		usort($nums, function($a, $b) use ($center) {
+			$da = abs($a - $center);
+			$db = abs($b - $center);
+			if ($da == $db) return $a <=> $b; // tie-breaker: lane lebih kecil dulu (kiri)
+			return $da <=> $db;
+		});
+		return $nums;
+	}
+
+	// NEW: kembalikan daftar lintasan yang diisi mulai dari tengah ke luar
+	private function getCentralLanes(int $lanes, int $count): array {
+		if ($count <= 0) return [];
+		if ($count >= $lanes) return range(1, $lanes);
+
+		$result = [];
+		// even vs odd center handling
+		if ($lanes % 2 == 0) {
+			// even: centerLeft = n/2, centerRight = centerLeft+1
+			$left = $lanes / 2;
+			$right = $left + 1;
+			$result[] = $left;
+			if (count($result) < $count) $result[] = $right;
+			$offset = 1;
+			while (count($result) < $count) {
+				$l = $left - $offset;
+				$r = $right + $offset;
+				if ($l >= 1 && count($result) < $count) $result[] = $l;
+				if ($r <= $lanes && count($result) < $count) $result[] = $r;
+				$offset++;
+			}
+		} else {
+			// odd: center = (n+1)/2
+			$center = intdiv($lanes + 1, 2);
+			$result[] = $center;
+			$offset = 1;
+			while (count($result) < $count) {
+				$l = $center - $offset;
+				$r = $center + $offset;
+				if ($l >= 1 && count($result) < $count) $result[] = $l;
+				if ($r <= $lanes && count($result) < $count) $result[] = $r;
+				$offset++;
+			}
+		}
+
+		return $result;
 	}
 }

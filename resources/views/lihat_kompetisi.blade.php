@@ -122,7 +122,7 @@
                                                     @php
                                                         $raw = $peserta->catatan_waktu ?? null;
                                                         if ($raw === -1) {
-                                                            $displayWaktu = '60:60:100';
+                                                            $displayWaktu = '99:99:99';
                                                         } elseif (is_numeric($raw)) {
                                                             $ms = (int)$raw;
                                                             $totalSeconds = intdiv($ms, 1000);
@@ -135,7 +135,7 @@
                                                         }
                                                     @endphp
                                                     <tr class="hover:bg-gray-50">
-                                                        <td class="border border-gray-300 px-4 py-2">{{ $loop->iteration }}</td>
+                                                        <td class="border border-gray-300 px-4 py-2">{{ $peserta->no_lintasan }}</td>
                                                         <td class="border border-gray-300 px-4 py-2">{{ $peserta->nama_peserta }}</td>
                                                         <td class="border border-gray-300 px-4 py-2">{{ $peserta->tgl_lahir }}</td>
                                                         <td class="border border-gray-300 px-4 py-2">{{ $peserta->asal_klub }}</td>
