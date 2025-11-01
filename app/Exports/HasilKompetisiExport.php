@@ -18,6 +18,7 @@ class HasilKompetisiExport implements FromArray, WithHeadings
 
     // helper: milliseconds -> MM:SS:MS
     private function msToDisplay(?int $ms): string {
+        if ($ms === -1) return '60:60:100';
         if ($ms === null) return '00:00:000';
         $ms = (int)$ms;
         $totalSeconds = intdiv($ms, 1000);

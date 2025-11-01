@@ -14,6 +14,8 @@ class ExportPdfController extends Controller
 {
     // helper: milliseconds -> MM:SS:MS
     private function msToDisplay(?int $ms): string {
+        // sentinel -1 berarti NS/DQ -> tampilkan literal 60:60:100
+        if ($ms === -1) return '60:60:100';
         if ($ms === null) return '00:00:000';
         $ms = (int)$ms;
         $totalSeconds = intdiv($ms, 1000);

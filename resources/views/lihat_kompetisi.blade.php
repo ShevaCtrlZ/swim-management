@@ -121,7 +121,9 @@
                                                 @foreach ($kelompok as $peserta)
                                                     @php
                                                         $raw = $peserta->catatan_waktu ?? null;
-                                                        if (is_numeric($raw)) {
+                                                        if ($raw === -1) {
+                                                            $displayWaktu = '60:60:100';
+                                                        } elseif (is_numeric($raw)) {
                                                             $ms = (int)$raw;
                                                             $totalSeconds = intdiv($ms, 1000);
                                                             $minutes = intdiv($totalSeconds, 60);

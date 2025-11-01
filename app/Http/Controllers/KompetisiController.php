@@ -337,8 +337,8 @@ class KompetisiController extends Controller
 	    $keterangan = $request->keterangan ?? null;
 
 	    if ($keterangan && in_array(strtoupper($keterangan), ['NS','DQ'])) {
-	        // simpan 0 ms untuk NS/DQ (atau bisa diset NULL tergantung preferensi)
-	        $catatanWaktuMs = 0;
+	        // gunakan sentinel -1 untuk menandai NS/DQ (agar bisa ditampilkan sebagai 60:60:100)
+	        $catatanWaktuMs = -1;
 	    } else {
 	        $parsed = $this->parseTimeToMs($request->hasil ?? '');
 	        $catatanWaktuMs = $parsed; // can be null
@@ -374,7 +374,7 @@ class KompetisiController extends Controller
             if ($jumlahLintasan < 2) continue;
 
             $peserta = DB::table('detail_lomba')
-                ->where('detail_lomba.lomba_id', $lomba->id)
+                ->where('lomba_id', $lomba->id)
                 ->join('peserta', 'detail_lomba.peserta_id', '=', 'peserta.id')
                 ->select('detail_lomba.id', 'peserta.nama_peserta', 'detail_lomba.limit')
                 ->orderByRaw("CASE WHEN detail_lomba.limit IS NULL OR detail_lomba.limit = '' THEN 1 ELSE 0 END, detail_lomba.limit DESC")
@@ -810,7 +810,8 @@ public function exportPesertaKlub($kompetisi_id, $klub){
 	        $keterangan = $keterangan === '' ? null : $keterangan;
 
 	        if ($keterangan && in_array(strtoupper($keterangan), ['NS', 'DQ'])) {
-	            $catatanWaktuMs = 0;
+	            // sentinel -1 untuk NS/DQ
+	            $catatanWaktuMs = -1;
 	        } else {
 	            $parsed = $this->parseTimeToMs((string)$waktu);
 	            if ($parsed === null) {
