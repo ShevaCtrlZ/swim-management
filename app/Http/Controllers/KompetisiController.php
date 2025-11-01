@@ -13,40 +13,42 @@ use Illuminate\Support\Facades\Auth;
 
 class KompetisiController extends Controller
 {
-	// helper: parse "MM:SS:MS" -> milliseconds (int) OR return null if invalid/empty
-	private function parseTimeToMs(?string $s): ?int {
-		if ($s === null) return null;
-		$s = trim($s);
-		if ($s === '') return null;
-		// format MM:SS:MS (MS = 3 digits)
-		if (preg_match('/^(\d{2}):(\d{2}):(\d{3})$/', $s, $m)) {
-			$minutes = (int)$m[1];
-			$seconds = (int)$m[2];
-			$millis = (int)$m[3];
-			return (($minutes * 60) + $seconds) * 1000 + $millis;
-		}
-		// fallback: HH:MM:SS -> convert to ms
-		if (preg_match('/^(\d{2}):(\d{2}):(\d{2})$/', $s, $m2)) {
-			$hours = (int)$m2[1];
-			$minutes = (int)$m2[2];
-			$seconds = (int)$m2[3];
-			return (($hours * 3600) + ($minutes * 60) + $seconds) * 1000;
-		}
-		return null;
-	}
+    // helper: parse "MM:SS:CS" (CS = 2 digits centiseconds) -> milliseconds (int) OR return null if invalid/empty
+    private function parseTimeToMs(?string $s): ?int
+    {
+        if ($s === null) return null;
+        $s = trim($s);
+        if ($s === '') return null;
+        // format MM:SS:CS (minutes:seconds:centiseconds) e.g. 01:02:15 => 1 min, 2 sec, 150 ms
+        if (preg_match('/^(\d{2}):(\d{2}):(\d{2})$/', $s, $m)) {
+            $minutes = (int)$m[1];
+            $seconds = (int)$m[2];
+            $centis = (int)$m[3]; // 0..99
+            return (($minutes * 60) + $seconds) * 1000 + ($centis * 10);
+        }
+        // legacy: MM:SS:MS (MS = 3 digits milliseconds) — still accepted
+        if (preg_match('/^(\d{2}):(\d{2}):(\d{3})$/', $s, $m2)) {
+            $minutes = (int)$m2[1];
+            $seconds = (int)$m2[2];
+            $millis = (int)$m2[3];
+            return (($minutes * 60) + $seconds) * 1000 + $millis;
+        }
+        return null;
+    }
 
-	// helper: format milliseconds -> "MM:SS:MS"
-	private function msToDisplay(?int $ms): string {
-		// sentinel -1 berarti NS/DQ -> tampilkan literal 99:99:99
-		if ($ms === -1) return '99:99:99';
-		if ($ms === null) return '00:00:000';
-		$ms = (int)$ms;
-		$totalSeconds = intdiv($ms, 1000);
-		$minutes = intdiv($totalSeconds, 60);
-		$seconds = $totalSeconds % 60;
-		$millis = $ms % 1000;
-		return sprintf('%02d:%02d:%03d', $minutes, $seconds, $millis);
-	}
+    // helper: format milliseconds -> "MM:SS:CS" (CS = 2 digits centiseconds)
+    private function msToDisplay(?int $ms): string
+    {
+        // sentinel -1 berarti NS/DQ -> tampilkan literal 99:99:99
+        if ($ms === -1) return '99:99:99';
+        if ($ms === null) return '00:00:00';
+        $ms = (int)$ms;
+        $totalSeconds = intdiv($ms, 1000);
+        $minutes = intdiv($totalSeconds, 60);
+        $seconds = $totalSeconds % 60;
+        $centis = intdiv($ms % 1000, 10); // convert ms -> centiseconds (00..99)
+        return sprintf('%02d:%02d:%02d', $minutes, $seconds, $centis);
+    }
 
     public function showListView(): View
     {
@@ -329,32 +331,32 @@ class KompetisiController extends Controller
     }
 
     public function updateHasil(Request $request, $id)
-	{
-	    // Validasi input: MM:SS:MS (MS = 3 digit milliseconds) atau kosong
-	    $request->validate([
-	        'hasil' => 'nullable|string',
-	        'keterangan' => 'nullable|in:NS,DQ',
-	    ]);
+    {
+        // Validasi input: MM:SS:MS (MS = 3 digit milliseconds) atau kosong
+        $request->validate([
+            'hasil' => 'nullable|string',
+            'keterangan' => 'nullable|in:NS,DQ',
+        ]);
 
-	    $keterangan = $request->keterangan ?? null;
+        $keterangan = $request->keterangan ?? null;
 
-	    if ($keterangan && in_array(strtoupper($keterangan), ['NS','DQ'])) {
-	        // gunakan sentinel -1 untuk menandai NS/DQ (agar bisa ditampilkan sebagai 60:60:100)
-	        $catatanWaktuMs = -1;
-	    } else {
-	        $parsed = $this->parseTimeToMs($request->hasil ?? '');
-	        $catatanWaktuMs = $parsed; // can be null
-	    }
+        if ($keterangan && in_array(strtoupper($keterangan), ['NS', 'DQ'])) {
+            // gunakan sentinel -1 untuk menandai NS/DQ (agar bisa ditampilkan sebagai 60:60:100)
+            $catatanWaktuMs = -1;
+        } else {
+            $parsed = $this->parseTimeToMs($request->hasil ?? '');
+            $catatanWaktuMs = $parsed; // can be null
+        }
 
-	    DB::table('detail_lomba')
-	        ->where('id', $id)
-	        ->update([
-	            'catatan_waktu' => $catatanWaktuMs,
-	            'keterangan' => $keterangan,
-	        ]);
+        DB::table('detail_lomba')
+            ->where('id', $id)
+            ->update([
+                'catatan_waktu' => $catatanWaktuMs,
+                'keterangan' => $keterangan,
+            ]);
 
-	    return redirect()->back()->with('success', 'Hasil lomba berhasil diperbarui.');
-	}
+        return redirect()->back()->with('success', 'Hasil lomba berhasil diperbarui.');
+    }
 
     public function destroy($id)
     {
@@ -544,7 +546,6 @@ class KompetisiController extends Controller
             return back()->with('error', 'Parameter seri tidak valid.');
         }
 
-        // Gunakan $seri langsung dari parameter (tanpa dikurangi 1)
         $seri = (int)$seri;
 
         // Ambil jumlah lintasan dari lomba
@@ -553,12 +554,12 @@ class KompetisiController extends Controller
             return back()->with('error', 'Lomba tidak ditemukan.');
         }
 
-        // Ambil peserta hanya dari seri yang diminta
+        // Ambil peserta hanya dari seri yang diminta (sertakan no_lintasan & keterangan)
         $kelompok = DB::table('detail_lomba')
             ->where('detail_lomba.lomba_id', $lomba_id)
             ->where('detail_lomba.seri', $seri)
             ->join('peserta', 'detail_lomba.peserta_id', '=', 'peserta.id')
-            ->select('detail_lomba.id', 'detail_lomba.peserta_id', 'detail_lomba.limit')
+            ->select('detail_lomba.id', 'detail_lomba.peserta_id', 'detail_lomba.limit', 'detail_lomba.no_lintasan', 'detail_lomba.keterangan')
             ->orderBy('detail_lomba.urutan')
             ->get();
 
@@ -566,12 +567,28 @@ class KompetisiController extends Controller
             return back()->with('error', 'Seri tidak ditemukan atau tidak ada peserta.');
         }
 
-        // Urutkan peserta berdasarkan limit (terendah ke tertinggi, null terakhir)
-        $sorted = $kelompok->sortBy(function ($p) {
-            return is_null($p->limit) || $p->limit === '' ? INF : $p->limit;
+        // Ambil peserta valid untuk center-out (exclude DQ/NS).
+        // Urutkan peserta berdasarkan nilai limit (waktu) kecil -> besar menggunakan parseTimeToMs.
+        $valid = $kelompok->filter(function($d) {
+            return !in_array(strtoupper($d->keterangan ?? ''), ['DQ','NS']);
         })->values();
 
-        // Center-Out Sorting
+        // helper untuk konversi limit -> ms (fallback INF jika invalid)
+        $toMs = function($p) {
+            $lim = $p->limit ?? '';
+            $ms = $this->parseTimeToMs($lim);
+            return is_int($ms) ? $ms : PHP_INT_MAX;
+        };
+
+        if ($valid->isEmpty()) {
+            // tidak ada peserta valid, gunakan seluruh kelompok tetapi tetap urut berdasarkan limit jika tersedia
+            $sorted = $kelompok->sortBy($toMs)->values();
+        } else {
+            // urutkan peserta valid berdasarkan limit (waktu kecil dulu)
+            $sorted = $valid->sortBy($toMs)->values();
+        }
+
+        // Center-Out Sorting (tidak diubah: menentukan siapa yang diprioritaskan ke tengah)
         $final = [];
         $count = $sorted->count();
         $center = intval(floor(($count - 1) / 2));
@@ -591,15 +608,68 @@ class KompetisiController extends Controller
         ksort($final);
         $final = array_values($final);
 
-        // Update hanya peserta di seri dan lomba ini
-        foreach ($final as $i => $peserta) {
-            DB::table('detail_lomba')
-                ->where('id', $peserta->id)
-                ->where('detail_lomba.lomba_id', $lomba_id) // tambahkan filter lomba_id
-                ->where('seri', $seri) // filter seri
-                ->update([
-                    'no_lintasan' => $i + 1
-                ]);
+        // Gabungkan final dengan others (others diurutkan menurut no_lintasan saat ini)
+        $idsFinal = array_map(function($p) { return $p->id; }, $final);
+        $others = $kelompok->filter(function($p) use ($idsFinal) {
+            return !in_array($p->id, $idsFinal);
+        })->sortBy(function($p) {
+            return ($p->no_lintasan === null || $p->no_lintasan === '') ? PHP_INT_MAX : (int)$p->no_lintasan;
+        })->values()->all();
+
+        $combined = array_merge($final, $others);
+        $totalInSeries = count($combined);
+        $jumlahLintasan = $lomba->jumlah_lintasan ?? 4;
+
+        // threshold = floor(3/4 * jumlah_lintasan)
+        $threshold = (int) floor(0.75 * $jumlahLintasan);
+
+        if ($totalInSeries > 0 && $totalInSeries <= $threshold) {
+            // Case A: jika peserta sedikit (<= 3/4 lintasan) -> seluruh peserta ambil lintasan tengah
+            $assignedAll = $this->getCentralLanes($jumlahLintasan, $totalInSeries);
+            // IMPORTANT: getCentralLanes() returns lanes in center-out order.
+            // Final/combined array is in left->right order, so sort lanes ascending (left->right)
+            sort($assignedAll, SORT_NUMERIC);
+            foreach ($combined as $i => $pes) {
+                $lane = $assignedAll[$i] ?? ($i + 1);
+                DB::table('detail_lomba')
+                    ->where('id', $pes->id)
+                    ->where('detail_lomba.lomba_id', $lomba_id)
+                    ->where('seri', $seri)
+                    ->update(['no_lintasan' => $lane]);
+            }
+        } else {
+            // Case B: peserta banyak -> berikan lintasan tengah hanya untuk final, others isi sisa lintasan
+            $countFinal = count($final);
+            if ($countFinal > 0) {
+                $centeredLanes = $this->getCentralLanes($jumlahLintasan, $countFinal);
+            } else {
+                $centeredLanes = [];
+            }
+            $allLanes = range(1, $jumlahLintasan);
+            $remainingLanes = array_values(array_diff($allLanes, $centeredLanes));
+
+            // centerLanes currently center-out -> convert to left->right by sorting ascending
+            sort($centeredLanes, SORT_NUMERIC);
+
+            // assign lanes ke final (centered) — final[] is left->right
+            foreach ($final as $i => $pes) {
+                $lane = $centeredLanes[$i] ?? ($i + 1);
+                DB::table('detail_lomba')
+                    ->where('id', $pes->id)
+                    ->where('detail_lomba.lomba_id', $lomba_id)
+                    ->where('seri', $seri)
+                    ->update(['no_lintasan' => $lane]);
+            }
+
+            // assign lanes ke others menggunakan remainingLanes (preserve order)
+            foreach ($others as $j => $oth) {
+                $lane = $remainingLanes[$j] ?? ($j + 1 + count($centeredLanes));
+                DB::table('detail_lomba')
+                    ->where('id', $oth->id)
+                    ->where('detail_lomba.lomba_id', $lomba_id)
+                    ->where('seri', $seri)
+                    ->update(['no_lintasan' => $lane]);
+            }
         }
 
         return back()->with('success', 'Peserta pada seri ini sudah diurutkan dengan Center-Out Sorting.');
@@ -617,64 +687,19 @@ class KompetisiController extends Controller
                 ->where('detail_lomba.lomba_id', $lomba->id)
                 ->distinct()
                 ->pluck('seri')
-                ->filter(function ($s) { return !is_null($s) && $s !== ''; })
+                ->filter(function ($s) {
+                    return !is_null($s) && $s !== '';
+                })
                 ->values();
 
             foreach ($seriList as $seri) {
-                // Ambil peserta untuk seri ini
-                $kelompok = DB::table('detail_lomba')
-                    ->where('detail_lomba.lomba_id', $lomba->id)
-                    ->where('detail_lomba.seri', $seri)
-                    ->join('peserta', 'detail_lomba.peserta_id', '=', 'peserta.id')
-                    ->select('detail_lomba.id', 'detail_lomba.peserta_id', 'detail_lomba.limit', 'detail_lomba.keterangan')
-                    ->orderBy('detail_lomba.urutan')
-                    ->get();
-
-                if ($kelompok->isEmpty()) {
-                    continue;
-                }
-
-                // Filter keluarin DQ/NS jika diperlukan (konsisten dengan hasilJuaraUmum)
-                $sorted = $kelompok->filter(function($d) {
-                    return !in_array(strtoupper($d->keterangan ?? ''), ['DQ','NS']);
-                })->sortBy(function ($p) {
-                    return is_null($p->limit) || $p->limit === '' ? INF : $p->limit;
-                })->values();
-
-                // Jika setelah filter tidak ada, gunakan semua peserta asli
-                if ($sorted->isEmpty()) {
-                    $sorted = $kelompok->values();
-                }
-
-                // Center-Out Sorting (sama seperti single-seri)
-                $final = [];
-                $count = $sorted->count();
-                $center = intval(floor(($count - 1) / 2));
-                $left = $center;
-                $right = $center + 1;
-                $toggle = true;
-
-                foreach ($sorted as $peserta) {
-                    if ($toggle) {
-                        $final[$left--] = $peserta;
-                    } else {
-                        $final[$right++] = $peserta;
-                    }
-                    $toggle = !$toggle;
-                }
-
-                ksort($final);
-                $final = array_values($final);
-
-                // Update no_lintasan hanya pada detail_lomba yang sesuai (lomba + seri)
-                foreach ($final as $i => $pes) {
-                    DB::table('detail_lomba')
-                        ->where('id', $pes->id)
-                        ->where('detail_lomba.lomba_id', $lomba->id)
-                        ->where('seri', $seri)
-                        ->update([
-                            'no_lintasan' => $i + 1
-                        ]);
+                // Reuse per-seri implementation to ensure identical behavior with single-seri center routine.
+                // Call centerMaxLimitPeserta for this lomba+seri (ignore the returned redirect).
+                try {
+                    $this->centerMaxLimitPeserta(app('request'), $lomba->id, $seri);
+                } catch (\Throwable $e) {
+                    // jika ada error pada satu seri, lanjutkan seri lainnya
+                    // (tidak menampilkan kesalahan di UI dari sini)
                 }
             }
         }
@@ -720,184 +745,187 @@ class KompetisiController extends Controller
         return view('klub.lihat_kompetisi', compact('kompetisi', 'lomba', 'namaKlub'));
     }
 
-public function hasilJuaraUmum($kompetisi_id)
-{
-    $kompetisi = Kompetisi::findOrFail($kompetisi_id);
-    $lomba = Lomba::with(['detailLomba.peserta'])->where('kompetisi_id', $kompetisi_id)->get();
+    public function hasilJuaraUmum($kompetisi_id)
+    {
+        $kompetisi = Kompetisi::findOrFail($kompetisi_id);
+        $lomba = Lomba::with(['detailLomba.peserta'])->where('kompetisi_id', $kompetisi_id)->get();
 
-    $rekap = [];
-    foreach ($lomba as $item) {
-        $grouped = $item->detailLomba->groupBy('seri');
-        foreach ($grouped as $seri => $details) {
-            // Exclude DQ/NS
-            $filtered = $details->filter(function($detail) {
-                return !in_array(strtoupper($detail->keterangan), ['DQ', 'NS']);
-            });
-            $sorted = $filtered->sort(function($a, $b) {
-                $waktuA = $a->catatan_waktu ? strtotime("1970-01-01 {$a->catatan_waktu} UTC") : PHP_INT_MAX;
-                $waktuB = $b->catatan_waktu ? strtotime("1970-01-01 {$b->catatan_waktu} UTC") : PHP_INT_MAX;
-                return $waktuA <=> $waktuB;
-            })->values();
+        $rekap = [];
+        foreach ($lomba as $item) {
+            $grouped = $item->detailLomba->groupBy('seri');
+            foreach ($grouped as $seri => $details) {
+                // Exclude DQ/NS
+                $filtered = $details->filter(function ($detail) {
+                    return !in_array(strtoupper($detail->keterangan), ['DQ', 'NS']);
+                });
+                $sorted = $filtered->sort(function ($a, $b) {
+                    $waktuA = $a->catatan_waktu ? strtotime("1970-01-01 {$a->catatan_waktu} UTC") : PHP_INT_MAX;
+                    $waktuB = $b->catatan_waktu ? strtotime("1970-01-01 {$b->catatan_waktu} UTC") : PHP_INT_MAX;
+                    return $waktuA <=> $waktuB;
+                })->values();
 
-            foreach ($sorted->take(3) as $idx => $detail) {
-                $peserta = $detail->peserta;
-                if ($peserta) {
-                    $tahun = date('Y', strtotime($peserta->tgl_lahir));
-                    if (!isset($rekap[$tahun][$peserta->id])) {
-                        $rekap[$tahun][$peserta->id] = [
-                            'nama' => $peserta->nama_peserta,
-                            'asal_klub' => $peserta->asal_klub,
-                            'total_juara1' => 0,
-                            'total_juara2' => 0,
-                            'total_juara3' => 0,
-                            'total_lomba' => 0,
-                        ];
+                foreach ($sorted->take(3) as $idx => $detail) {
+                    $peserta = $detail->peserta;
+                    if ($peserta) {
+                        $tahun = date('Y', strtotime($peserta->tgl_lahir));
+                        if (!isset($rekap[$tahun][$peserta->id])) {
+                            $rekap[$tahun][$peserta->id] = [
+                                'nama' => $peserta->nama_peserta,
+                                'asal_klub' => $peserta->asal_klub,
+                                'total_juara1' => 0,
+                                'total_juara2' => 0,
+                                'total_juara3' => 0,
+                                'total_lomba' => 0,
+                            ];
+                        }
+                        if ($idx == 0) $rekap[$tahun][$peserta->id]['total_juara1']++;
+                        if ($idx == 1) $rekap[$tahun][$peserta->id]['total_juara2']++;
+                        if ($idx == 2) $rekap[$tahun][$peserta->id]['total_juara3']++;
+                        $rekap[$tahun][$peserta->id]['total_lomba']++;
                     }
-                    if ($idx == 0) $rekap[$tahun][$peserta->id]['total_juara1']++;
-                    if ($idx == 1) $rekap[$tahun][$peserta->id]['total_juara2']++;
-                    if ($idx == 2) $rekap[$tahun][$peserta->id]['total_juara3']++;
-                    $rekap[$tahun][$peserta->id]['total_lomba']++;
                 }
             }
         }
-    }
 
-    // Urutkan juara umum tiap tahun berdasarkan total medali
-    foreach ($rekap as $tahun => &$pesertas) {
-        uasort($pesertas, function($a, $b) {
-            if ($a['total_juara1'] != $b['total_juara1']) {
-                return $b['total_juara1'] - $a['total_juara1'];
-            }
-            if ($a['total_juara2'] != $b['total_juara2']) {
-                return $b['total_juara2'] - $a['total_juara2'];
-            }
-            return $b['total_juara3'] - $a['total_juara3'];
-        });
-    }
-
-    return view('hasil_juara_umum', compact('kompetisi', 'rekap'));
-}
-public function exportPesertaKlub($kompetisi_id, $klub){
-    $kompetisi = Kompetisi::findOrFail($kompetisi_id);
-
-    // ambil peserta untuk klub (cocokkan string asal_klub)
-    $pesertas = DB::table('detail_lomba')
-        ->join('peserta','detail_lomba.peserta_id','peserta.id')
-        ->join('lomba','detail_lomba.lomba_id','lomba.id')
-        ->where('lomba.kompetisi_id', $kompetisi_id)
-        ->where('peserta.asal_klub', urldecode($klub))
-        ->select(
-            'peserta.id as peserta_id',
-            'peserta.nama_peserta',
-            'peserta.tgl_lahir',
-            'peserta.jenis_kelamin',
-            'peserta.asal_klub',
-            'detail_lomba.no_lintasan',
-            'detail_lomba.catatan_waktu',
-            'detail_lomba.limit',
-            'lomba.nomor_lomba',
-            'lomba.jarak',
-            'lomba.jenis_gaya'
-        )
-        ->orderBy('lomba.nomor_lomba')
-        ->orderBy('detail_lomba.no_lintasan')
-        ->get();
-
-        $pdf = Pdf::loadView('klub.peserta_pdf', compact('kompetisi','pesertas','klub'));
-        return $pdf->download('peserta_'.$kompetisi->id.'_'.preg_replace('/[^A-Za-z0-9]/','_',urldecode($klub)).'.pdf');
+        // Urutkan juara umum tiap tahun berdasarkan total medali
+        foreach ($rekap as $tahun => &$pesertas) {
+            uasort($pesertas, function ($a, $b) {
+                if ($a['total_juara1'] != $b['total_juara1']) {
+                    return $b['total_juara1'] - $a['total_juara1'];
+                }
+                if ($a['total_juara2'] != $b['total_juara2']) {
+                    return $b['total_juara2'] - $a['total_juara2'];
+                }
+                return $b['total_juara3'] - $a['total_juara3'];
+            });
         }
 
-        public function updateHasilSeries(Request $request, $lomba_id, $seri = null)
-	{
-	    // Jika seri tidak disertakan, batalkan dengan pesan yang jelas.
-	    if (is_null($seri) || $seri === '') {
-	        return redirect()->back()->with('error', 'Parameter seri diperlukan untuk menyimpan hasil per seri.');
-	    }
+        return view('hasil_juara_umum', compact('kompetisi', 'rekap'));
+    }
+    public function exportPesertaKlub($kompetisi_id, $klub)
+    {
+        $kompetisi = Kompetisi::findOrFail($kompetisi_id);
 
-	    if (!is_numeric($seri)) {
-	        return redirect()->back()->with('error', 'Parameter seri tidak valid.');
-	    }
+        // ambil peserta untuk klub (cocokkan string asal_klub)
+        $pesertas = DB::table('detail_lomba')
+            ->join('peserta', 'detail_lomba.peserta_id', 'peserta.id')
+            ->join('lomba', 'detail_lomba.lomba_id', 'lomba.id')
+            ->where('lomba.kompetisi_id', $kompetisi_id)
+            ->where('peserta.asal_klub', urldecode($klub))
+            ->select(
+                'peserta.id as peserta_id',
+                'peserta.nama_peserta',
+                'peserta.tgl_lahir',
+                'peserta.jenis_kelamin',
+                'peserta.asal_klub',
+                'detail_lomba.no_lintasan',
+                'detail_lomba.catatan_waktu',
+                'detail_lomba.limit',
+                'lomba.nomor_lomba',
+                'lomba.jarak',
+                'lomba.jenis_gaya'
+            )
+            ->orderBy('lomba.nomor_lomba')
+            ->orderBy('detail_lomba.no_lintasan')
+            ->get();
 
-	    $hasilArr = $request->input('hasil', []);
-	    $keteranganArr = $request->input('keterangan', []);
+        $pdf = Pdf::loadView('klub.peserta_pdf', compact('kompetisi', 'pesertas', 'klub'));
+        return $pdf->download('peserta_' . $kompetisi->id . '_' . preg_replace('/[^A-Za-z0-9]/', '_', urldecode($klub)) . '.pdf');
+    }
 
-	    foreach ($hasilArr as $detailId => $waktu) {
-	        $keterangan = $keteranganArr[$detailId] ?? null;
-	        $keterangan = $keterangan === '' ? null : $keterangan;
+    public function updateHasilSeries(Request $request, $lomba_id, $seri = null)
+    {
+        // Jika seri tidak disertakan, batalkan dengan pesan yang jelas.
+        if (is_null($seri) || $seri === '') {
+            return redirect()->back()->with('error', 'Parameter seri diperlukan untuk menyimpan hasil per seri.');
+        }
 
-	        if ($keterangan && in_array(strtoupper($keterangan), ['NS', 'DQ'])) {
-	            // sentinel -1 untuk NS/DQ
-	            $catatanWaktuMs = -1;
-	        } else {
-	            $parsed = $this->parseTimeToMs((string)$waktu);
-	            if ($parsed === null) {
-	                // skip invalid format
-	                continue;
-	            }
-	            $catatanWaktuMs = $parsed;
-	        }
+        if (!is_numeric($seri)) {
+            return redirect()->back()->with('error', 'Parameter seri tidak valid.');
+        }
 
-	        DB::table('detail_lomba')
-	            ->where('id', $detailId)
-	            ->where('lomba_id', $lomba_id)
-	            ->where('seri', $seri)
-	            ->update([
-	                'catatan_waktu' => $catatanWaktuMs,
-	                'keterangan' => $keterangan,
-	            ]);
-	    }
+        $hasilArr = $request->input('hasil', []);
+        $keteranganArr = $request->input('keterangan', []);
 
-	    return redirect()->back()->with('success', 'Hasil seri telah disimpan.');
-	}
+        foreach ($hasilArr as $detailId => $waktu) {
+            $keterangan = $keteranganArr[$detailId] ?? null;
+            $keterangan = $keterangan === '' ? null : $keterangan;
 
-	// helper: urutkan nomor lintasan berdasarkan kedekatan ke tengah (prioritas kiri jika sama)
-	private function centerLaneOrder(int $lanes): array {
-		$center = ($lanes + 1) / 2.0;
-		$nums = range(1, $lanes);
-		usort($nums, function($a, $b) use ($center) {
-			$da = abs($a - $center);
-			$db = abs($b - $center);
-			if ($da == $db) return $a <=> $b; // tie-breaker: lane lebih kecil dulu (kiri)
-			return $da <=> $db;
-		});
-		return $nums;
-	}
+            if ($keterangan && in_array(strtoupper($keterangan), ['NS', 'DQ'])) {
+                // sentinel -1 untuk NS/DQ
+                $catatanWaktuMs = -1;
+            } else {
+                $parsed = $this->parseTimeToMs((string)$waktu);
+                if ($parsed === null) {
+                    // skip invalid format
+                    continue;
+                }
+                $catatanWaktuMs = $parsed;
+            }
 
-	// NEW: kembalikan daftar lintasan yang diisi mulai dari tengah ke luar
-	private function getCentralLanes(int $lanes, int $count): array {
-		if ($count <= 0) return [];
-		if ($count >= $lanes) return range(1, $lanes);
+            DB::table('detail_lomba')
+                ->where('id', $detailId)
+                ->where('lomba_id', $lomba_id)
+                ->where('seri', $seri)
+                ->update([
+                    'catatan_waktu' => $catatanWaktuMs,
+                    'keterangan' => $keterangan,
+                ]);
+        }
 
-		$result = [];
-		// even vs odd center handling
-		if ($lanes % 2 == 0) {
-			// even: centerLeft = n/2, centerRight = centerLeft+1
-			$left = $lanes / 2;
-			$right = $left + 1;
-			$result[] = $left;
-			if (count($result) < $count) $result[] = $right;
-			$offset = 1;
-			while (count($result) < $count) {
-				$l = $left - $offset;
-				$r = $right + $offset;
-				if ($l >= 1 && count($result) < $count) $result[] = $l;
-				if ($r <= $lanes && count($result) < $count) $result[] = $r;
-				$offset++;
-			}
-		} else {
-			// odd: center = (n+1)/2
-			$center = intdiv($lanes + 1, 2);
-			$result[] = $center;
-			$offset = 1;
-			while (count($result) < $count) {
-				$l = $center - $offset;
-				$r = $center + $offset;
-				if ($l >= 1 && count($result) < $count) $result[] = $l;
-				if ($r <= $lanes && count($result) < $count) $result[] = $r;
-				$offset++;
-			}
-		}
+        return redirect()->back()->with('success', 'Hasil seri telah disimpan.');
+    }
 
-		return $result;
-	}
+    // helper: urutkan nomor lintasan berdasarkan kedekatan ke tengah (prioritas kiri jika sama)
+    private function centerLaneOrder(int $lanes): array
+    {
+        $center = ($lanes + 1) / 2.0;
+        $nums = range(1, $lanes);
+        usort($nums, function ($a, $b) use ($center) {
+            $da = abs($a - $center);
+            $db = abs($b - $center);
+            if ($da == $db) return $a <=> $b; // tie-breaker: lane lebih kecil dulu (kiri)
+            return $da <=> $db;
+        });
+        return $nums;
+    }
+
+    // NEW: kembalikan daftar lintasan yang diisi mulai dari tengah ke luar
+    private function getCentralLanes(int $lanes, int $count): array
+    {
+        if ($count <= 0) return [];
+        if ($count >= $lanes) return range(1, $lanes);
+
+        $result = [];
+        // even vs odd center handling
+        if ($lanes % 2 == 0) {
+            // even: centerLeft = n/2, centerRight = centerLeft+1
+            $left = $lanes / 2;
+            $right = $left + 1;
+            $result[] = $left;
+            if (count($result) < $count) $result[] = $right;
+            $offset = 1;
+            while (count($result) < $count) {
+                $l = $left - $offset;
+                $r = $right + $offset;
+                if ($l >= 1 && count($result) < $count) $result[] = $l;
+                if ($r <= $lanes && count($result) < $count) $result[] = $r;
+                $offset++;
+            }
+        } else {
+            // odd: center = (n+1)/2
+            $center = intdiv($lanes + 1, 2);
+            $result[] = $center;
+            $offset = 1;
+            while (count($result) < $count) {
+                $l = $center - $offset;
+                $r = $center + $offset;
+                if ($l >= 1 && count($result) < $count) $result[] = $l;
+                if ($r <= $lanes && count($result) < $count) $result[] = $r;
+                $offset++;
+            }
+        }
+
+        return $result;
+    }
 }

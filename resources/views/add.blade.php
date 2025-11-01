@@ -208,7 +208,7 @@
                     name="limit_per_lomba[${l.id}]" 
                     value="99:99:99" 
                     class="p-2 border rounded w-36"
-                    title="Format harus HH:MM:SS, misal 01:30:00"
+                    title="Format MM:SS:CS (centiseconds), misal 01:30:50 untuk 1 menit 30,50 centis"
                 />
             </div>`;
                     }

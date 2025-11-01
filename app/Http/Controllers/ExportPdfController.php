@@ -12,17 +12,17 @@ use Illuminate\Support\Facades\Auth;
 
 class ExportPdfController extends Controller
 {
-    // helper: milliseconds -> MM:SS:MS
+    // helper: milliseconds -> MM:SS:CS (centiseconds 2 digits)
     private function msToDisplay(?int $ms): string {
-        // sentinel -1 berarti NS/DQ -> tampilkan literal 60:60:100
+        // sentinel -1 berarti NS/DQ -> tampilkan literal 99:99:99
         if ($ms === -1) return '99:99:99';
-        if ($ms === null) return '00:00:000';
+        if ($ms === null) return '00:00:00';
         $ms = (int)$ms;
         $totalSeconds = intdiv($ms, 1000);
         $minutes = intdiv($totalSeconds, 60);
         $seconds = $totalSeconds % 60;
-        $millis = $ms % 1000;
-        return sprintf('%02d:%02d:%03d', $minutes, $seconds, $millis);
+        $centis = intdiv($ms % 1000, 10);
+        return sprintf('%02d:%02d:%02d', $minutes, $seconds, $centis);
     }
 
     public function hasilKompetisi($kompetisi_id)
@@ -34,7 +34,7 @@ class ExportPdfController extends Controller
         foreach ($lomba as $lb) {
             foreach ($lb->detailLomba as $detail) {
                 $raw = $detail->catatan_waktu ?? null;
-                $detail->catatan_waktu = is_numeric($raw) ? $this->msToDisplay((int)$raw) : ($raw ?? '00:00:000');
+                $detail->catatan_waktu = is_numeric($raw) ? $this->msToDisplay((int)$raw) : ($raw ?? '00:00:00');
             }
         }
 
@@ -50,7 +50,7 @@ class ExportPdfController extends Controller
         foreach ($lomba as $lb) {
             foreach ($lb->detailLomba as $detail) {
                 $raw = $detail->catatan_waktu ?? null;
-                $detail->catatan_waktu = is_numeric($raw) ? $this->msToDisplay((int)$raw) : ($raw ?? '00:00:000');
+                $detail->catatan_waktu = is_numeric($raw) ? $this->msToDisplay((int)$raw) : ($raw ?? '00:00:00');
             }
         }
 
@@ -105,7 +105,7 @@ class ExportPdfController extends Controller
         // format catatan_waktu to display string and overwrite catatan_waktu so views use formatted value
         $pesertas = $pesertas->map(function($row) {
             $raw = $row->catatan_waktu ?? null;
-            $row->catatan_waktu = is_numeric($raw) ? $this->msToDisplay((int)$raw) : ($raw ?? '00:00:000');
+            $row->catatan_waktu = is_numeric($raw) ? $this->msToDisplay((int)$raw) : ($raw ?? '00:00:00');
             return $row;
         });
 

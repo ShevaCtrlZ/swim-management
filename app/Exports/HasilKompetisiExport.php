@@ -16,16 +16,16 @@ class HasilKompetisiExport implements FromArray, WithHeadings
         $this->kompetisiId = $id;
     }
 
-    // helper: milliseconds -> MM:SS:MS
+    // helper: milliseconds -> MM:SS:CS (centiseconds)
     private function msToDisplay(?int $ms): string {
         if ($ms === -1) return '99:99:99';
-        if ($ms === null) return '00:00:000';
+        if ($ms === null) return '00:00:00';
         $ms = (int)$ms;
         $totalSeconds = intdiv($ms, 1000);
         $minutes = intdiv($totalSeconds, 60);
         $seconds = $totalSeconds % 60;
-        $millis = $ms % 1000;
-        return sprintf('%02d:%02d:%03d', $minutes, $seconds, $millis);
+        $centis = intdiv($ms % 1000, 10);
+        return sprintf('%02d:%02d:%02d', $minutes, $seconds, $centis);
     }
 
     public function array(): array

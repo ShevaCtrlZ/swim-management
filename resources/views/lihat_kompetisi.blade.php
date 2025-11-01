@@ -128,10 +128,10 @@
                                                             $totalSeconds = intdiv($ms, 1000);
                                                             $minutes = intdiv($totalSeconds, 60);
                                                             $seconds = $totalSeconds % 60;
-                                                            $millis = $ms % 1000;
-                                                            $displayWaktu = sprintf('%02d:%02d:%03d', $minutes, $seconds, $millis);
+                                                            $centis = intdiv($ms % 1000, 10);
+                                                            $displayWaktu = sprintf('%02d:%02d:%02d', $minutes, $seconds, $centis);
                                                         } else {
-                                                            $displayWaktu = $peserta->catatan_waktu ?? '00:00:000';
+                                                            $displayWaktu = $peserta->catatan_waktu ?? '00:00:00';
                                                         }
                                                     @endphp
                                                     <tr class="hover:bg-gray-50">
@@ -145,7 +145,7 @@
                                                                 <input type="text" name="hasil[{{ $peserta->id }}]"
                                                                     value="{{ $displayWaktu }}"
                                                                     class="border border-gray-300 rounded px-2 py-1 text-sm w-24"
-                                                                    placeholder="MM:SS:MS" />
+                                                                    placeholder="MM:SS:CS" />
 
                                                                 <select name="keterangan[{{ $peserta->id }}]"
                                                                     class="border border-gray-300 rounded px-2 py-1 text-sm">
