@@ -189,6 +189,7 @@
                 allLomba.forEach(l => {
                     // Filter kompetisi_id
                     if (kompetisiId && l.kompetisi_id != kompetisiId) return;
+                    if (kompetisiId === '') return;
                     // skip jika lomba sudah dipilih peserta
                     if (window.lombaSudahDipilih.includes(l.id)) return;
 
