@@ -23,6 +23,12 @@
             <i class="fas fa-file-pdf mr-2"></i> Export PDF
         </a>
 
+        <!-- Export Buku Acara Excel -->
+        <a href="{{ route('export.buku_acara_excel', $kompetisi->id) }}" target="_blank"
+            class="inline-block px-3 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700 mb-4 ml-2">
+            <i class="fas fa-file-excel mr-2"></i> Export Buku Acara (Excel)
+        </a>
+
         <a href="{{ route('kompetisi.juara_umum', $kompetisi->id) }}"
             class="inline-block px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 mb-4">
             <i class="fas fa-trophy mr-2"></i> Lihat Juara Umum

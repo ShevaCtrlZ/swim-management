@@ -192,5 +192,9 @@ Route::post('/lomba/{lomba_id}/seri/{seri?}/update-hasil-series', [KompetisiCont
 Route::get('/kompetisi/{id}/juara-umum', [KompetisiController::class, 'hasilJuaraUmum'])->name('kompetisi.juara_umum');
 Route::get('/kompetisi/{kompetisi}/starting-list/{klub?}', [ExportPdfController::class, 'exportPesertaKlub'])
     ->name('export.starting_list_pdf');
+Route::get('/kompetisi/{kompetisi}/hasil-excel', [ExportPdfController::class, 'exportHasilExcel'])
+    ->name('export.hasil_excel');
+Route::get('/kompetisi/{kompetisi}/buku-acara-excel', [ExportPdfController::class, 'exportBukuAcaraExcel'])
+    ->name('export.buku_acara_excel');
 
 require __DIR__ . '/auth.php';
